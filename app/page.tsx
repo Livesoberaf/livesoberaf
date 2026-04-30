@@ -11,7 +11,7 @@ export default function LandingPage() {
     setLeaving(true);
 
     setTimeout(() => {
-      router.push("/about");
+      router.push("/home");
     }, 1200);
   };
 
