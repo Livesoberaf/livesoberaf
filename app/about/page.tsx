@@ -29,7 +29,7 @@ export default function AboutPage() {
           ABOUT
         </p>
 
-        <h1 className="mt-4 text-5xl font-semibold tracking-[0.2em] md:text-7xl">
+        <h1 className="mt-4 text-4xl sm:text-5xl md:text-7xl font-semibold tracking-[0.18em] break-words">
           LIVESOBERAF
         </h1>
 
