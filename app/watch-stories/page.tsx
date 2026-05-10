@@ -37,27 +37,30 @@ const MANUAL_STORIES: ManualStory[] = [
     title: "DAY ONE TO NOW",
     description:
       "Katy describes what early recovery felt like, what nearly stopped her continuing, and what helped her keep going.",
-    video: "/videos/katy-alcohol.mp4",
+    video:
+      "https://res.cloudinary.com/dsllk1oan/video/upload/v1778414572/katy-alcohol-uk-25-35-female-foudation-q1_ugnrpt.mp4",
   },
   {
     id: "tato-1",
     firstName: "TATO",
     recoveryFocus: "ALCOHOL",
     timeSober: "IN RECOVERY",
-    title: "RECOVERY IN HER OWN WORDS",
+    title: "RECOVERY IN HIS OWN WORDS",
     description:
-      "Tato shares her experience of addiction, recovery, and what helped her begin to move forward.",
-    video: "/videos/tato-alcohol.mp4",
+      "Tato shares his experience of addiction, recovery, and what helped him begin to move forward.",
+    video:
+      "https://res.cloudinary.com/dsllk1oan/video/upload/v1778421941/tato-alcohol-uk-35-45-male-foundation-q1_hlag60.mp4",
   },
   {
-    id: "neive-1",
-    firstName: "NEIVE",
+    id: "nieve-1",
+    firstName: "NIEVE",
     recoveryFocus: "CODEINE",
     timeSober: "3 MONTHS",
     title: "EARLY RECOVERY",
     description:
-      "Neive shares what the first months away from codeine felt like and what helped her stay steady.",
-    video: "/videos/neive-codeine-1.mp4",
+      "Nieve shares what the first months away from codeine felt like and what helped her stay steady.",
+    video:
+      "https://res.cloudinary.com/dsllk1oan/video/upload/v1778409278/nieve-codeine-uk-25-40-female-foundation-q1_wti19z.mp4",
   },
   {
     id: "helen-1",
@@ -67,7 +70,8 @@ const MANUAL_STORIES: ManualStory[] = [
     title: "A DIFFERENT START",
     description:
       "Helen talks honestly about recognising the problem and what helped her begin recovery.",
-    video: "/videos/helen-alcohol.mp4",
+    video:
+      "https://res.cloudinary.com/dsllk1oan/video/upload/v1778422594/helen-alcohol-uk-45-60-femail-foundation-q1_advqan.mp4",
   },
   {
     id: "chris-1",
@@ -77,7 +81,8 @@ const MANUAL_STORIES: ManualStory[] = [
     title: "ONE YEAR SOBER",
     description:
       "Chris shares what changed, what kept him going, and what one year of sobriety has meant.",
-    video: "/videos/chris-alcohol.mp4",
+    video:
+      "https://res.cloudinary.com/dsllk1oan/video/upload/chris-alcohol-new_tbcfbh.mp4",
   },
   {
     id: "jodie-1",
@@ -87,7 +92,8 @@ const MANUAL_STORIES: ManualStory[] = [
     title: "LIFE AFTER ALCOHOL",
     description:
       "Jodie shares what recovery looks like long-term and how life changed once alcohol was no longer part of it.",
-    video: "/videos/jodie-alcohol.mp4",
+    video:
+      "https://res.cloudinary.com/dsllk1oan/video/upload/v1778413756/jodie-alcohol-uk-35-45-female-foundation-q1_xtrdwa.mp4",
   },
 ];
 
@@ -142,7 +148,7 @@ export default function WatchStoriesPage() {
               WATCH STORIES
             </p>
 
-            <h1 className="mt-4 text-5xl font-semibold tracking-[0.2em] md:text-7xl">
+            <h1 className="mt-4 text-4xl font-semibold tracking-[0.12em] sm:text-5xl md:text-7xl md:tracking-[0.2em]">
               LIVESOBERAF
             </h1>
 
@@ -200,6 +206,8 @@ export default function WatchStoriesPage() {
 
                   <a
                     href={story.video}
+                    target="_blank"
+                    rel="noreferrer"
                     className="block w-full border border-white/20 px-6 py-4 text-center text-sm uppercase tracking-[0.3em] transition hover:bg-white hover:text-black"
                   >
                     WATCH STORY
