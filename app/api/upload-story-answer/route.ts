@@ -1,22 +1,30 @@
 import { NextResponse } from "next/server";
-import { mkdir, readFile, writeFile } from "fs/promises";
-import path from "path";
+import { v2 as cloudinary } from "cloudinary";
+import { Readable } from "stream";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key: process.env.CLOUDINARY_API_KEY!,
+  api_secret: process.env.CLOUDINARY_API_SECRET!,
+});
 
 export const runtime = "nodejs";
 
 const TOTAL_QUESTIONS = 20;
 
-type StoredSession = {
-  sessionId: string;
-  name: string;
-  substance: string;
-  stage: string;
-  consent: boolean;
-  createdAt: string;
-  updatedAt: string;
-  isPublished: boolean;
-  answers: Record<number, string>;
-};
+function uploadBufferToCloudinary(buffer: Buffer, options: any): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      options,
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      }
+    );
+
+    Readable.from(buffer).pipe(uploadStream);
+  });
+}
 
 export async function POST(request: Request) {
   try {
@@ -37,80 +45,35 @@ export async function POST(request: Request) {
       );
     }
 
-    const uploadsDir = path.join(process.cwd(), "public", "uploads", "stories");
-    const sessionsDir = path.join(process.cwd(), "public", "uploads", "sessions");
-
-    await mkdir(uploadsDir, { recursive: true });
-    await mkdir(sessionsDir, { recursive: true });
-
-    const safe = (value: string) =>
-      value
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
-
-    const safeName = safe(name || "story");
-    const safeSubstance = safe(substance || "recovery");
-
-    const extension =
-      file.type.includes("mp4")
-        ? "mp4"
-        : file.type.includes("webm")
-        ? "webm"
-        : "webm";
-
-    const fileName = `${safeName}-${safeSubstance}-${sessionId}-q${
-      questionIndex + 1
-    }.${extension}`;
-
-    const filePath = path.join(uploadsDir, fileName);
-    const publicUrl = `/uploads/stories/${fileName}`;
-
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
 
-    const sessionPath = path.join(sessionsDir, `${sessionId}.json`);
-
-    let session: StoredSession = {
-      sessionId,
-      name,
-      substance,
-      stage,
-      consent,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      isPublished: false,
-      answers: {},
-    };
-
-    try {
-      const existing = await readFile(sessionPath, "utf8");
-      session = JSON.parse(existing) as StoredSession;
-    } catch {
-      // first save
-    }
-
-    session.name = name;
-    session.substance = substance;
-    session.stage = stage;
-    session.consent = consent;
-    session.updatedAt = new Date().toISOString();
-    session.answers[questionIndex] = publicUrl;
-
-    const answerCount = Object.keys(session.answers).length;
-    session.isPublished = consent && answerCount >= TOTAL_QUESTIONS;
-
-    await writeFile(sessionPath, JSON.stringify(session, null, 2), "utf8");
+    const uploadResult = await uploadBufferToCloudinary(buffer, {
+      resource_type: "video",
+      folder: "livesoberaf/stories",
+      public_id: `${sessionId}-q${questionIndex + 1}`,
+      overwrite: true,
+      context: {
+        sessionId,
+        name,
+        substance,
+        stage,
+        consent: String(consent),
+        questionIndex: String(questionIndex),
+        questionNumber: String(questionIndex + 1),
+      },
+    });
 
     return NextResponse.json({
       success: true,
-      videoUrl: publicUrl,
-      answerCount,
-      isPublished: session.isPublished,
+      videoUrl: uploadResult.secure_url,
+      publicId: uploadResult.public_id,
+      answerCount: questionIndex + 1,
+      isPublished: consent && questionIndex + 1 >= TOTAL_QUESTIONS,
     });
   } catch (error) {
     console.error(error);
+
     return NextResponse.json(
       { error: "Failed to upload story answer." },
       { status: 500 }
