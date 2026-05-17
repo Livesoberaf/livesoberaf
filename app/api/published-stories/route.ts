@@ -17,31 +17,30 @@ type StorySession = {
   ageRange: string;
   sex: string;
   location: string;
+  consent: boolean;
   answers: Record<number, string>;
-  createdAt?: string;
-  updatedAt?: string;
 };
 
 export async function GET() {
   try {
-   const result = await cloudinary.search
-  .expression("resource_type:video AND folder=livesoberaf/stories/foundation")
-  .sort_by("public_id", "desc")
-  .max_results(500)
-  .execute(); 
+    const result = await cloudinary.search
+      .expression(
+        "resource_type:video AND folder=livesoberaf/stories/community"
+      )
+      .sort_by("created_at", "desc")
+      .max_results(500)
+      .execute();
 
     const sessions: Record<string, StorySession> = {};
 
     result.resources.forEach((video: any) => {
       const context = video.context?.custom || {};
 
-      const sessionId =
-        context.sessionId ||
-        video.public_id?.split("/").pop()?.split("-q")[0];
-
-      const questionIndex = Number(context.questionIndex ?? 0);
+      const sessionId = context.sessionId;
 
       if (!sessionId) return;
+
+      const questionIndex = Number(context.questionIndex);
 
       if (!sessions[sessionId]) {
         sessions[sessionId] = {
@@ -52,22 +51,25 @@ export async function GET() {
           ageRange: context.ageRange || "",
           sex: context.sex || "",
           location: context.location || "",
+          consent: context.consent === "true",
           answers: {},
-          createdAt: video.created_at,
-          updatedAt: video.created_at,
         };
       }
 
       sessions[sessionId].answers[questionIndex] = video.secure_url;
-      sessions[sessionId].updatedAt = video.created_at;
     });
 
     const publishedSessions = Object.values(sessions)
-      .filter((session) => Object.keys(session.answers).length > 0)
+      .filter(
+        (session) =>
+          session.consent &&
+          Object.keys(session.answers).length >= 20
+      )
       .sort((a, b) => {
-        const aDate = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-        const bDate = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-        return bDate - aDate;
+        return (
+          Object.keys(b.answers).length -
+          Object.keys(a.answers).length
+        );
       });
 
     return NextResponse.json({
@@ -76,6 +78,9 @@ export async function GET() {
   } catch (error) {
     console.error(error);
 
-    return NextResponse.json({ sessions: [] }, { status: 500 });
+    return NextResponse.json(
+      { sessions: [] },
+      { status: 500 }
+    );
   }
 }

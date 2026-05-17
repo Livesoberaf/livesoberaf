@@ -12,6 +12,13 @@ export const runtime = "nodejs";
 
 const TOTAL_QUESTIONS = 20;
 
+function safe(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function uploadBufferToCloudinary(buffer: Buffer, options: any): Promise<any> {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
@@ -31,11 +38,16 @@ export async function POST(request: Request) {
     const formData = await request.formData();
 
     const file = formData.get("file") as File | null;
+
     const sessionId = String(formData.get("sessionId") || "");
     const questionIndex = Number(formData.get("questionIndex"));
-    const name = String(formData.get("name") || "");
-    const substance = String(formData.get("substance") || "");
+
+    const name = String(formData.get("name") || "anonymous");
+    const substance = String(formData.get("substance") || "recovery");
     const stage = String(formData.get("stage") || "");
+    const ageRange = String(formData.get("ageRange") || "");
+    const sex = String(formData.get("sex") || "");
+    const location = String(formData.get("location") || "");
     const consent = String(formData.get("consent") || "false") === "true";
 
     if (!file || !sessionId || Number.isNaN(questionIndex)) {
@@ -48,19 +60,29 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
+    const publicId = `${safe(name)}-${safe(substance)}-${safe(
+      location || "unknown"
+    )}-${safe(ageRange || "age")}-${safe(sex || "sex")}-${sessionId}-q${
+      questionIndex + 1
+    }`;
+
     const uploadResult = await uploadBufferToCloudinary(buffer, {
       resource_type: "video",
-      folder: "livesoberaf/stories",
-      public_id: `${sessionId}-q${questionIndex + 1}`,
+      folder: "livesoberaf/stories/community",
+      public_id: publicId,
       overwrite: true,
       context: {
         sessionId,
         name,
         substance,
         stage,
+        ageRange,
+        sex,
+        location,
         consent: String(consent),
         questionIndex: String(questionIndex),
         questionNumber: String(questionIndex + 1),
+        source: "community",
       },
     });
 
