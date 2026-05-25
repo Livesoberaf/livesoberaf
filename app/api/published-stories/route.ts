@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
-  api_key: process.env.CLOUDINARY_API_KEY!,
-  api_secret: process.env.CLOUDINARY_API_SECRET!,
-});
-
 export const runtime = "nodejs";
 
 function parseFromPublicId(publicId: string) {
@@ -17,13 +11,36 @@ function parseFromPublicId(publicId: string) {
     name: parts[0] || "Anonymous",
     substance: parts[1] || "Recovery",
     location: parts[2] || "",
-    ageRange: `${parts[3] || ""}-${parts[4] || ""}`,
+    ageRange: parts[3] && parts[4] ? `${parts[3]}-${parts[4]}` : "",
     sex: parts[5] || "",
   };
 }
 
 export async function GET() {
   try {
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Missing Cloudinary environment variables.",
+          hasCloudName: Boolean(cloudName),
+          hasApiKey: Boolean(apiKey),
+          hasApiSecret: Boolean(apiSecret),
+        },
+        { status: 500 }
+      );
+    }
+
+    cloudinary.config({
+      cloud_name: cloudName,
+      api_key: apiKey,
+      api_secret: apiSecret,
+    });
+
     const results = await cloudinary.search
       .expression("folder:livesoberaf/stories/community")
       .sort_by("created_at", "desc")
@@ -67,11 +84,14 @@ export async function GET() {
       success: true,
       stories,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
 
     return NextResponse.json(
-      { success: false, error: "Failed to fetch stories." },
+      {
+        success: false,
+        error: error?.message || "Failed to fetch stories.",
+      },
       { status: 500 }
     );
   }
