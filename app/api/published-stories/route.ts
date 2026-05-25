@@ -25,21 +25,17 @@ function parseFromPublicId(publicId: string) {
 export async function GET() {
   try {
     const results = await cloudinary.search
-      .expression("resource_type:video")
+      .expression("resource_type:video AND folder=livesoberaf/stories/community")
       .sort_by("created_at", "desc")
       .max_results(100)
       .execute();
 
-    const filteredVideos = results.resources.filter((video: any) =>
-      video.public_id.includes("livesoberaf/stories/community")
-    );
-
     const sessions: Record<string, any> = {};
 
-    filteredVideos.forEach((video: any) => {
+    results.resources.forEach((video: any) => {
       const parsed = parseFromPublicId(video.public_id);
 
-      const sessionId = video.public_id;
+      const sessionId = video.asset_id;
       const questionIndex = 0;
 
       if (!sessions[sessionId]) {
@@ -47,7 +43,7 @@ export async function GET() {
           sessionId,
           name: parsed.name,
           substance: parsed.substance,
-          stage: "",
+          stage: "Recovery",
           ageRange: parsed.ageRange,
           sex: parsed.sex,
           location: parsed.location,
@@ -56,27 +52,29 @@ export async function GET() {
         };
       }
 
-      sessions[sessionId].answers[questionIndex] = video.secure_url;
+      sessions[sessionId].answers[questionIndex] =
+        video.secure_url;
     });
 
     const stories = Object.values(sessions).map((session: any) => ({
       ...session,
       answerCount: Object.keys(session.answers).length,
       firstVideo:
-        session.answers[0] || Object.values(session.answers)[0],
+        session.answers[0] ||
+        Object.values(session.answers)[0],
     }));
 
     return NextResponse.json({
       success: true,
       stories,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("CLOUDINARY ERROR:", error);
 
     return NextResponse.json(
       {
         success: false,
-        error: error.message || "Failed to fetch stories.",
+        error: "Failed to fetch stories.",
       },
       { status: 500 }
     );
