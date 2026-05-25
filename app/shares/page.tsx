@@ -21,37 +21,43 @@ const FOUNDATION_STORIES = [
     name: "Katy",
     focus: "Alcohol",
     title: "What life looked like before things changed",
-    video: "/videos/katy-alcohol.mp4",
+    video:
+      "https://res.cloudinary.com/dsllk1oan/video/upload/v1778414572/katy-alcohol-uk-25-35-female-foudation-q1_ugnrpt.mp4",
   },
   {
     name: "Chris",
     focus: "Alcohol",
     title: "The moment I knew I needed help",
-    video: "/videos/chris-alcohol.mp4",
+    video:
+      "https://res.cloudinary.com/dsllk1oan/video/upload/chris-alcohol-new_tbcfbh.mp4",
   },
   {
     name: "Helen",
     focus: "Alcohol",
     title: "What recovery gave back to me",
-    video: "/videos/helen-alcohol.mp4",
+    video:
+      "https://res.cloudinary.com/dsllk1oan/video/upload/v1778422594/helen-alcohol-uk-45-60-femail-foundation-q1_advqan.mp4",
   },
   {
     name: "Jodie",
     focus: "Alcohol",
     title: "Learning to live differently",
-    video: "/videos/jodie-alcohol.mp4",
+    video:
+      "https://res.cloudinary.com/dsllk1oan/video/upload/v1778413756/jodie-alcohol-uk-35-45-female-foundation-q1_xtrdwa.mp4",
   },
   {
-    name: "Neil",
+    name: "Nieve",
     focus: "Codeine",
     title: "The quiet addiction nobody saw",
-    video: "/videos/neil-codeine-1.mp4",
+    video:
+      "https://res.cloudinary.com/dsllk1oan/video/upload/v1778409278/nieve-codeine-uk-25-40-female-foundation-q1_wti19z.mp4",
   },
   {
     name: "Tato",
     focus: "Alcohol",
     title: "Why I keep going",
-    video: "/videos/tato-alcohol.mp4",
+    video:
+      "https://res.cloudinary.com/dsllk1oan/video/upload/v1778421941/tato-alcohol-uk-35-45-male-foundation-q1_hlag60.mp4",
   },
 ];
 
@@ -91,7 +97,7 @@ export default function SharesPage() {
           </h1>
 
           <p className="mt-4 max-w-2xl text-white/70">
-            Watch foundation stories first, then explore new recovery journeys
+            Watch foundation stories first, then explore recovery journeys
             shared by the community.
           </p>
         </div>
@@ -101,6 +107,7 @@ export default function SharesPage() {
             <p className="text-xs uppercase tracking-[0.3em] text-[#d28b95]">
               Start Here
             </p>
+
             <h2 className="mt-3 text-3xl font-semibold">
               Foundation Stories
             </h2>
@@ -128,14 +135,9 @@ export default function SharesPage() {
                     {story.title}
                   </h3>
 
-                  <a
-                    href={story.video}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block w-full border border-white/20 px-6 py-4 text-center text-sm uppercase tracking-[0.3em] transition hover:bg-white hover:text-black"
-                  >
+                  <button className="w-full border border-white/20 px-6 py-4 text-sm uppercase tracking-[0.3em] transition hover:bg-white hover:text-black">
                     Watch Story
-                  </a>
+                  </button>
                 </div>
               </div>
             ))}
@@ -147,15 +149,20 @@ export default function SharesPage() {
             <p className="text-xs uppercase tracking-[0.3em] text-[#d28b95]">
               Community
             </p>
+
             <h2 className="mt-3 text-3xl font-semibold">
               Community Recovery Stories
             </h2>
           </div>
 
           {loading ? (
-            <p className="text-white/50">Loading community stories...</p>
+            <p className="text-white/50">
+              Loading community stories...
+            </p>
           ) : stories.length === 0 ? (
-            <p className="text-white/50">No community stories uploaded yet.</p>
+            <p className="text-white/50">
+              No community stories uploaded yet.
+            </p>
           ) : (
             <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
               {stories.map((story) => (
