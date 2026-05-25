@@ -25,30 +25,23 @@ function parseFromPublicId(publicId: string) {
 export async function GET() {
   try {
     const results = await cloudinary.search
-      .expression("resource_type:video")
+      .expression("folder=livesoberaf/stories/community")
       .sort_by("created_at", "desc")
-      .max_results(100)
+      .max_results(500)
       .execute();
 
     const sessions: Record<string, any> = {};
 
     results.resources.forEach((video: any) => {
-      if (
-        !video.public_id.includes("livesoberaf/stories/community")
-      ) {
-        return;
-      }
-
       const parsed = parseFromPublicId(video.public_id);
 
-      const sessionId = video.asset_id;
+      const sessionId = video.public_id;
 
       if (!sessions[sessionId]) {
         sessions[sessionId] = {
           sessionId,
           name: parsed.name,
           substance: parsed.substance,
-          stage: "Recovery",
           ageRange: parsed.ageRange,
           sex: parsed.sex,
           location: parsed.location,
@@ -70,20 +63,15 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      count: stories.length,
       stories,
     });
   } catch (error: any) {
-    console.error("CLOUDINARY ERROR:", error);
+    console.error("Cloudinary Error:", error);
 
     return NextResponse.json(
       {
         success: false,
         error: error?.message || String(error),
-        fullError: error,
-        cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-        hasApiKey: !!process.env.CLOUDINARY_API_KEY,
-        hasApiSecret: !!process.env.CLOUDINARY_API_SECRET,
       },
       { status: 500 }
     );
