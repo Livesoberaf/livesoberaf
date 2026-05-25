@@ -19,7 +19,10 @@ function safe(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-function uploadBufferToCloudinary(buffer: Buffer, options: any): Promise<any> {
+function uploadBufferToCloudinary(
+  buffer: Buffer,
+  options: any
+): Promise<any> {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       options,
@@ -48,7 +51,8 @@ export async function POST(request: Request) {
     const ageRange = String(formData.get("ageRange") || "");
     const sex = String(formData.get("sex") || "");
     const location = String(formData.get("location") || "");
-    const consent = String(formData.get("consent") || "false") === "true";
+    const consent =
+      String(formData.get("consent") || "false") === "true";
 
     if (!file || !sessionId || Number.isNaN(questionIndex)) {
       return NextResponse.json(
@@ -62,23 +66,24 @@ export async function POST(request: Request) {
 
     const publicId = `${safe(name)}-${safe(substance)}-${safe(
       location || "unknown"
-    )}-${safe(ageRange || "age")}-${safe(sex || "sex")}-${sessionId}-q${
-      questionIndex + 1
-    }`;
+    )}-${safe(ageRange || "age")}-${safe(
+      sex || "sex"
+    )}-${sessionId}-q${questionIndex + 1}`;
 
     const uploadResult = await uploadBufferToCloudinary(buffer, {
       resource_type: "video",
       folder: "livesoberaf/stories/community",
       public_id: publicId,
       overwrite: true,
+
       context: {
-        sessionId,
-        name,
-        substance,
-        stage,
-        ageRange,
-        sex,
-        location,
+        sessionId: String(sessionId),
+        name: String(name),
+        substance: String(substance),
+        stage: String(stage),
+        ageRange: String(ageRange),
+        sex: String(sex),
+        location: String(location),
         consent: String(consent),
         questionIndex: String(questionIndex),
         questionNumber: String(questionIndex + 1),
@@ -91,7 +96,8 @@ export async function POST(request: Request) {
       videoUrl: uploadResult.secure_url,
       publicId: uploadResult.public_id,
       answerCount: questionIndex + 1,
-      isPublished: consent && questionIndex + 1 >= TOTAL_QUESTIONS,
+      isPublished:
+        consent && questionIndex + 1 >= TOTAL_QUESTIONS,
     });
   } catch (error) {
     console.error(error);
