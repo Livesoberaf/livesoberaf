@@ -25,7 +25,7 @@ function parseFromPublicId(publicId: string) {
 export async function GET() {
   try {
     const results = await cloudinary.search
-      .expression("resource_type:video AND folder=livesoberaf/stories/community")
+      .expression("resource_type:video")
       .sort_by("created_at", "desc")
       .max_results(100)
       .execute();
@@ -33,10 +33,15 @@ export async function GET() {
     const sessions: Record<string, any> = {};
 
     results.resources.forEach((video: any) => {
+      if (
+        !video.public_id.includes("livesoberaf/stories/community")
+      ) {
+        return;
+      }
+
       const parsed = parseFromPublicId(video.public_id);
 
       const sessionId = video.asset_id;
-      const questionIndex = 0;
 
       if (!sessions[sessionId]) {
         sessions[sessionId] = {
@@ -52,8 +57,7 @@ export async function GET() {
         };
       }
 
-      sessions[sessionId].answers[questionIndex] =
-        video.secure_url;
+      sessions[sessionId].answers[0] = video.secure_url;
     });
 
     const stories = Object.values(sessions).map((session: any) => ({
@@ -66,15 +70,20 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
+      count: stories.length,
       stories,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("CLOUDINARY ERROR:", error);
 
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to fetch stories.",
+        error: error?.message || String(error),
+        fullError: error,
+        cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+        hasApiKey: !!process.env.CLOUDINARY_API_KEY,
+        hasApiSecret: !!process.env.CLOUDINARY_API_SECRET,
       },
       { status: 500 }
     );
