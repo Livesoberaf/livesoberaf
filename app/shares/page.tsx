@@ -87,7 +87,8 @@ export default function SharesPage() {
   return (
     <main className="min-h-screen bg-black px-6 py-12 text-white">
       <section className="mx-auto max-w-7xl">
-        <div className="mb-12">
+
+        <div className="mb-16">
           <p className="text-sm uppercase tracking-[0.3em] text-white/50">
             LiveSoberAF
           </p>
@@ -100,6 +101,13 @@ export default function SharesPage() {
             Watch foundation stories first, then explore recovery journeys
             shared by the community.
           </p>
+
+          <a
+            href="/share-your-story"
+            className="mt-8 inline-block border border-white/20 px-8 py-5 text-sm uppercase tracking-[0.3em] transition hover:bg-white hover:text-black"
+          >
+            Record Your Share
+          </a>
         </div>
 
         <section className="mb-20">
@@ -225,6 +233,7 @@ export default function SharesPage() {
             </div>
           )}
         </section>
+
       </section>
     </main>
   );
