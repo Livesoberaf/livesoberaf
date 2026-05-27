@@ -61,7 +61,9 @@ export async function GET() {
     const stories = Object.values(sessions).map((session: any) => ({
       ...session,
       answerCount: Object.keys(session.answers).length,
-      firstVideo: session.answers[0] || Object.values(session.answers)[0],
+      firstVideo:
+        session.answers[0] ||
+        Object.values(session.answers)[0],
     }));
 
     return NextResponse.json({
@@ -70,10 +72,12 @@ export async function GET() {
       stories,
     });
   } catch (error: any) {
+    console.error("CLOUDINARY ERROR:", error);
+
     return NextResponse.json(
       {
         success: false,
-        error: error?.message || JSON.stringify(error),
+        error: error?.message || String(error),
       },
       { status: 500 }
     );
