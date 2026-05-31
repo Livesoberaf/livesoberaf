@@ -15,6 +15,16 @@ function parseFromPublicId(publicId: string) {
   };
 }
 
+function getQuestionIndex(publicId: string) {
+  const match = publicId.match(/-q(\d+)$/);
+  return match ? Number(match[1]) - 1 : 0;
+}
+
+function getSessionId(publicId: string) {
+  const fileName = publicId.split("/").pop() || "";
+  return fileName.replace(/-q\d+$/, "");
+}
+
 export async function GET() {
   try {
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
@@ -31,12 +41,10 @@ export async function GET() {
       );
     }
 
-    const auth = Buffer.from(
-      `${apiKey}:${apiSecret}`
-    ).toString("base64");
+    const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString("base64");
 
     const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/resources/video/upload?prefix=livesoberaf/stories/community&max_results=12`,
+      `https://api.cloudinary.com/v1_1/${cloudName}/resources/video/upload?prefix=livesoberaf/stories/community&max_results=100`,
       {
         headers: {
           Authorization: `Basic ${auth}`,
@@ -56,25 +64,44 @@ export async function GET() {
       );
     }
 
-    const stories =
-      data.resources?.map((item: any) => {
-        const info = parseFromPublicId(item.public_id);
+    const sessions: Record<string, any> = {};
 
-        return {
-          sessionId: item.asset_id,
-          name: info.name,
-          substance: info.substance,
-          ageRange: info.ageRange,
-          sex: info.sex,
-          location: info.location,
-          createdAt: item.created_at,
-          answerCount: 1,
-          firstVideo: item.secure_url,
-          answers: {
-            0: item.secure_url,
-          },
+    (data.resources || []).forEach((video: any) => {
+      const parsed = parseFromPublicId(video.public_id);
+      const questionIndex = getQuestionIndex(video.public_id);
+      const sessionId = getSessionId(video.public_id);
+
+      if (!sessions[sessionId]) {
+        sessions[sessionId] = {
+          sessionId,
+          name: parsed.name,
+          substance: parsed.substance,
+          stage: "Recovery",
+          ageRange: parsed.ageRange,
+          sex: parsed.sex,
+          location: parsed.location,
+          createdAt: video.created_at,
+          answerCount: 0,
+          firstVideo: video.secure_url,
+          answers: {},
         };
-      }) || [];
+      }
+
+      sessions[sessionId].answers[questionIndex] = video.secure_url;
+
+      if (questionIndex === 0) {
+        sessions[sessionId].firstVideo = video.secure_url;
+      }
+
+      sessions[sessionId].answerCount = Object.keys(
+        sessions[sessionId].answers
+      ).length;
+    });
+
+    const stories = Object.values(sessions).sort(
+      (a: any, b: any) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
 
     return NextResponse.json({
       success: true,
