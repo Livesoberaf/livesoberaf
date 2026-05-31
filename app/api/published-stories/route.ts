@@ -1,13 +1,6 @@
 import { NextResponse } from "next/server";
-import { v2 as cloudinary } from "cloudinary";
 
 export const runtime = "nodejs";
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 function parseFromPublicId(publicId: string) {
   const fileName = publicId.split("/").pop() || "";
@@ -24,17 +17,48 @@ function parseFromPublicId(publicId: string) {
 
 export async function GET() {
   try {
-    const results = await cloudinary.api.resources({
-      type: "upload",
-      resource_type: "video",
-      prefix: "livesoberaf/stories/community",
-      max_results: 500,
-      context: true,
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      return NextResponse.json({
+        success: false,
+        error: "Missing Cloudinary environment variables",
+        cloudName,
+        hasApiKey: !!apiKey,
+        hasApiSecret: !!apiSecret,
+      });
+    }
+
+    const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString("base64");
+
+    const url =
+      `https://api.cloudinary.com/v1_1/${cloudName}/resources/video/upload` +
+      `?prefix=livesoberaf/stories/community&max_results=500&context=true`;
+
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Basic ${auth}`,
+      },
     });
 
+    const text = await response.text();
+
+    if (!response.ok) {
+      return NextResponse.json({
+        success: false,
+        status: response.status,
+        rawError: text,
+      });
+    }
+
+    const data = JSON.parse(text);
     const sessions: Record<string, any> = {};
 
-    results.resources.forEach((video: any) => {
+    const resources = data.resources || [];
+
+    resources.forEach((video: any) => {
       const context = video.context?.custom || {};
       const parsed = parseFromPublicId(video.public_id);
 
@@ -61,9 +85,7 @@ export async function GET() {
     const stories = Object.values(sessions).map((session: any) => ({
       ...session,
       answerCount: Object.keys(session.answers).length,
-      firstVideo:
-        session.answers[0] ||
-        Object.values(session.answers)[0],
+      firstVideo: session.answers[0] || Object.values(session.answers)[0],
     }));
 
     return NextResponse.json({
@@ -72,14 +94,9 @@ export async function GET() {
       stories,
     });
   } catch (error: any) {
-    console.error("CLOUDINARY ERROR:", error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error?.message || String(error),
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      success: false,
+      error: error?.message || String(error),
+    });
   }
 }
