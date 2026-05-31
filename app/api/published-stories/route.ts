@@ -36,7 +36,7 @@ export async function GET() {
     ).toString("base64");
 
     const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/resources/video/upload?prefix=livesoberaf/stories/community&max_results=3`,
+      `https://api.cloudinary.com/v1_1/${cloudName}/resources/video/upload?prefix=livesoberaf/stories/community&max_results=12`,
       {
         headers: {
           Authorization: `Basic ${auth}`,
@@ -57,22 +57,21 @@ export async function GET() {
     }
 
     const stories =
-      data.resources?.map((video: any) => {
-        const parsed = parseFromPublicId(video.public_id);
+      data.resources?.map((item: any) => {
+        const info = parseFromPublicId(item.public_id);
 
         return {
-          sessionId: video.asset_id,
-          name: parsed.name,
-          substance: parsed.substance,
-          stage: "Recovery",
-          ageRange: parsed.ageRange,
-          sex: parsed.sex,
-          location: parsed.location,
-          createdAt: video.created_at,
+          sessionId: item.asset_id,
+          name: info.name,
+          substance: info.substance,
+          ageRange: info.ageRange,
+          sex: info.sex,
+          location: info.location,
+          createdAt: item.created_at,
           answerCount: 1,
-          firstVideo: video.secure_url,
+          firstVideo: item.secure_url,
           answers: {
-            0: video.secure_url,
+            0: item.secure_url,
           },
         };
       }) || [];
@@ -81,11 +80,13 @@ export async function GET() {
       success: true,
       stories,
     });
-  } catch (error: any) {
+  } catch (error) {
+    console.error(error);
+
     return NextResponse.json(
       {
         success: false,
-        error: error?.message || "Failed to load stories",
+        error: "Failed to load stories",
       },
       { status: 500 }
     );
