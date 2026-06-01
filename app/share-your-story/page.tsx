@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const QUESTIONS = [
   "What was life like before recovery?",
@@ -25,280 +25,374 @@ const QUESTIONS = [
   "What is life like now?",
 ];
 
-type Story = {
-  sessionId: string;
-  name: string;
-  substance: string;
-  stage: string;
-  ageRange: string;
-  sex: string;
-  location: string;
-  createdAt: string;
-  answerCount: number;
-  firstVideo: string;
-  answers: Record<string, string>;
-};
+export default function ShareYourStoryPage() {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
-const FOUNDATION_STORIES = [
-  {
-    name: "Katy",
-    focus: "Alcohol",
-    title: "What life looked like before things changed",
-    video:
-      "https://res.cloudinary.com/dsllk1oan/video/upload/v1778414572/katy-alcohol-uk-25-35-female-foudation-q1_ugnrpt.mp4",
-  },
-  {
-    name: "Chris",
-    focus: "Alcohol",
-    title: "The moment I knew I needed help",
-    video:
-      "https://res.cloudinary.com/dsllk1oan/video/upload/chris-alcohol-new_tbcfbh.mp4",
-  },
-  {
-    name: "Helen",
-    focus: "Alcohol",
-    title: "What recovery gave back to me",
-    video:
-      "https://res.cloudinary.com/dsllk1oan/video/upload/v1778422594/helen-alcohol-uk-45-60-femail-foundation-q1_advqan.mp4",
-  },
-  {
-    name: "Jodie",
-    focus: "Alcohol",
-    title: "Learning to live differently",
-    video:
-      "https://res.cloudinary.com/dsllk1oan/video/upload/v1778413756/jodie-alcohol-uk-35-45-female-foundation-q1_xtrdwa.mp4",
-  },
-  {
-    name: "Nieve",
-    focus: "Codeine",
-    title: "The quiet addiction nobody saw",
-    video:
-      "https://res.cloudinary.com/dsllk1oan/video/upload/v1778409278/nieve-codeine-uk-25-40-female-foundation-q1_wti19z.mp4",
-  },
-  {
-    name: "Tato",
-    focus: "Alcohol",
-    title: "Why I keep going",
-    video:
-      "https://res.cloudinary.com/dsllk1oan/video/upload/v1778421941/tato-alcohol-uk-35-45-male-foundation-q1_hlag60.mp4",
-  },
-];
+  const [started, setStarted] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
 
-export default function SharesPage() {
-  const [stories, setStories] = useState<Story[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [openStories, setOpenStories] = useState<Record<string, boolean>>({});
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [recording, setRecording] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+
+  const [sessionId] = useState(() => crypto.randomUUID());
+
+  const [name, setName] = useState("");
+  const [substance, setSubstance] = useState("");
+  const [stage, setStage] = useState("");
+  const [ageRange, setAgeRange] = useState("");
+  const [sex, setSex] = useState("");
+  const [location, setLocation] = useState("");
+  const [consent, setConsent] = useState(false);
+
+  const canBegin =
+    name.trim() !== "" &&
+    substance !== "" &&
+    stage !== "" &&
+    ageRange !== "" &&
+    sex !== "" &&
+    location.trim() !== "" &&
+    consent;
 
   useEffect(() => {
-    async function loadStories() {
-      try {
-        const response = await fetch("/api/published-stories");
-        const data = await response.json();
+    if (!started) return;
 
-        if (data.success) {
-          setStories(data.stories);
-        }
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
+    startCamera();
+
+    return () => {
+      stream?.getTracks().forEach((track) => track.stop());
+    };
+  }, [started]);
+
+  async function startCamera() {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+
+      setStream(mediaStream);
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
       }
+    } catch (error) {
+      console.error(error);
+      alert("Could not access camera or microphone.");
+    }
+  }
+
+  function startRecording() {
+    if (!stream) {
+      alert("Camera is not ready yet.");
+      return;
     }
 
-    loadStories();
-  }, []);
+    chunksRef.current = [];
+    setRecordedBlob(null);
+    setVideoUrl(null);
 
-  function toggleStory(sessionId: string) {
-    setOpenStories((prev) => ({
-      ...prev,
-      [sessionId]: !prev[sessionId],
-    }));
+    const recorder = new MediaRecorder(stream);
+
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        chunksRef.current.push(event.data);
+      }
+    };
+
+    recorder.onstop = () => {
+      const blob = new Blob(chunksRef.current, {
+        type: "video/webm",
+      });
+
+      const url = URL.createObjectURL(blob);
+
+      setRecordedBlob(blob);
+      setVideoUrl(url);
+      setRecording(false);
+    };
+
+    mediaRecorderRef.current = recorder;
+    recorder.start();
+    setRecording(true);
+  }
+
+  function stopRecording() {
+    mediaRecorderRef.current?.stop();
+  }
+
+  async function publishStory() {
+    if (!recordedBlob) {
+      alert("Please record an answer first.");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+
+      const formData = new FormData();
+
+      formData.append(
+        "file",
+        recordedBlob,
+        `${sessionId}-q${currentQuestion + 1}.webm`
+      );
+
+      formData.append("sessionId", sessionId);
+      formData.append("questionIndex", String(currentQuestion));
+      formData.append("name", name);
+      formData.append("substance", substance);
+      formData.append("stage", stage);
+      formData.append("ageRange", ageRange);
+      formData.append("sex", sex);
+      formData.append("location", location);
+      formData.append("consent", String(consent));
+
+      const response = await fetch("/api/upload-story-answer", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.videoUrl) {
+        throw new Error(data.error || "Upload failed");
+      }
+
+      alert(`Question ${currentQuestion + 1} saved.`);
+
+      setRecordedBlob(null);
+      setVideoUrl(null);
+    } catch (error) {
+      console.error(error);
+      alert("Sorry, this answer could not be saved.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  function nextQuestion() {
+    if (currentQuestion < QUESTIONS.length - 1) {
+      setCurrentQuestion((prev) => prev + 1);
+      setRecordedBlob(null);
+      setVideoUrl(null);
+    }
+  }
+
+  function previousQuestion() {
+    if (currentQuestion > 0) {
+      setCurrentQuestion((prev) => prev - 1);
+      setRecordedBlob(null);
+      setVideoUrl(null);
+    }
+  }
+
+  if (!started) {
+    return (
+      <main className="min-h-screen bg-black text-white">
+        <section className="mx-auto flex min-h-screen max-w-3xl items-center px-6 py-16">
+          <div className="w-full">
+            <p className="mb-6 text-sm uppercase tracking-[0.4em] text-[#d28b95]">
+              Share Your Story
+            </p>
+
+            <h1 className="mb-14 text-6xl font-bold leading-[0.95] tracking-[0.18em] md:text-7xl">
+              BEFORE WE
+              <br />
+              BEGIN
+            </h1>
+
+            <div className="space-y-8">
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="First name or name you want to use"
+                className="w-full border border-white/20 bg-transparent px-5 py-4 text-white"
+              />
+
+              <select
+                value={substance}
+                onChange={(e) => setSubstance(e.target.value)}
+                className="w-full border border-white/20 bg-black px-5 py-4 text-white"
+              >
+                <option value="">Primary Recovery Focus</option>
+                <option>Alcohol</option>
+                <option>Cocaine</option>
+                <option>Codeine</option>
+                <option>Heroin</option>
+                <option>Gambling</option>
+                <option>Cannabis</option>
+                <option>Other</option>
+              </select>
+
+              <select
+                value={stage}
+                onChange={(e) => setStage(e.target.value)}
+                className="w-full border border-white/20 bg-black px-5 py-4 text-white"
+              >
+                <option value="">Where are you in recovery?</option>
+                <option>Day 1</option>
+                <option>1 Week</option>
+                <option>1 Month</option>
+                <option>6 Months</option>
+                <option>1 Year</option>
+                <option>Multiple Years</option>
+              </select>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <select
+                  value={ageRange}
+                  onChange={(e) => setAgeRange(e.target.value)}
+                  className="w-full border border-white/20 bg-black px-5 py-4 text-white"
+                >
+                  <option value="">Age Range</option>
+                  <option>18-24</option>
+                  <option>25-34</option>
+                  <option>35-44</option>
+                  <option>45-54</option>
+                  <option>55+</option>
+                </select>
+
+                <select
+                  value={sex}
+                  onChange={(e) => setSex(e.target.value)}
+                  className="w-full border border-white/20 bg-black px-5 py-4 text-white"
+                >
+                  <option value="">Sex</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Non-binary</option>
+                  <option>Prefer not to say</option>
+                </select>
+              </div>
+
+              <input
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="City / Country"
+                className="w-full border border-white/20 bg-transparent px-5 py-4 text-white"
+              />
+
+              <label className="flex items-start gap-4 text-sm uppercase tracking-[0.12em] text-white/60">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  className="mt-1"
+                />
+                I am happy for my story to be used by LiveSoberAF to help others
+                in recovery.
+              </label>
+
+              <button
+                disabled={!canBegin}
+                onClick={() => setStarted(true)}
+                className="w-full border border-white/20 py-5 text-sm uppercase tracking-[0.35em] transition hover:bg-white hover:text-black disabled:opacity-30"
+              >
+                Begin Recording
+              </button>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
   }
 
   return (
-    <main className="min-h-screen bg-black px-6 py-12 text-white">
-      <section className="mx-auto max-w-7xl">
-        <div className="mb-16">
-          <p className="text-sm uppercase tracking-[0.3em] text-white/50">
-            LiveSoberAF
-          </p>
-
-          <h1 className="mt-4 text-5xl font-bold">Recovery Stories</h1>
-
-          <p className="mt-4 max-w-2xl text-white/70">
-            Watch foundation stories first, then explore recovery journeys
-            shared by the community.
-          </p>
-
-          <a
-            href="/share-your-story"
-            className="mt-8 inline-block border border-white/20 px-8 py-5 text-sm uppercase tracking-[0.3em] transition hover:bg-white hover:text-black"
-          >
-            Record Your Share
-          </a>
-        </div>
-
-        <section className="mb-20">
-          <div className="mb-8">
-            <p className="text-xs uppercase tracking-[0.3em] text-[#d28b95]">
-              Start Here
-            </p>
-
-            <h2 className="mt-3 text-3xl font-semibold">
-              Foundation Stories
-            </h2>
+    <main className="min-h-screen bg-black text-white">
+      <section className="mx-auto grid max-w-7xl gap-10 px-6 py-10 lg:grid-cols-[0.95fr_1.05fr] lg:gap-16">
+        <div>
+          <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black">
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              className="aspect-[4/5] w-full object-cover"
+            />
           </div>
 
-          <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-            {FOUNDATION_STORIES.map((story) => (
-              <div
-                key={story.name}
-                className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/5"
-              >
-                <video
-                  src={story.video}
-                  controls
-                  playsInline
-                  className="aspect-[4/5] w-full bg-black object-cover"
-                />
+          {videoUrl && (
+            <div className="mt-6">
+              <p className="mb-3 text-xs uppercase tracking-[0.28em] text-white/40">
+                Preview
+              </p>
 
-                <div className="space-y-4 p-6">
-                  <p className="text-xs uppercase tracking-[0.25em] text-white/40">
-                    {story.name} • {story.focus}
-                  </p>
-
-                  <h3 className="text-2xl font-semibold">{story.title}</h3>
-
-                  <a
-                    href={story.video}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block w-full border border-white/20 px-6 py-4 text-center text-sm uppercase tracking-[0.3em] transition hover:bg-white hover:text-black"
-                  >
-                    Watch Story
-                  </a>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section>
-          <div className="mb-8">
-            <p className="text-xs uppercase tracking-[0.3em] text-[#d28b95]">
-              Community
-            </p>
-
-            <h2 className="mt-3 text-3xl font-semibold">
-              Community Recovery Stories
-            </h2>
-          </div>
-
-          {loading ? (
-            <p className="text-white/50">Loading community stories...</p>
-          ) : stories.length === 0 ? (
-            <p className="text-white/50">No community stories uploaded yet.</p>
-          ) : (
-            <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-              {stories.map((story) => {
-                const isOpen = !!openStories[story.sessionId];
-
-                const sortedAnswers = Object.entries(story.answers || {}).sort(
-                  ([a], [b]) => Number(a) - Number(b)
-                );
-
-                const firstAnswer = sortedAnswers[0];
-                const remainingAnswers = sortedAnswers.slice(1);
-
-                return (
-                  <div
-                    key={story.sessionId}
-                    className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/5"
-                  >
-                    {firstAnswer && (
-                      <div className="p-4">
-                        <p className="mb-3 text-xs uppercase tracking-[0.2em] text-[#d28b95]">
-                          Question 1
-                        </p>
-
-                        <h3 className="mb-4 text-xl font-semibold leading-tight">
-                          {QUESTIONS[0]}
-                        </h3>
-
-                        <video
-                          src={firstAnswer[1]}
-                          controls
-                          playsInline
-                          preload="metadata"
-                          className="aspect-[4/5] w-full rounded-[1.5rem] bg-black object-cover"
-                        />
-                      </div>
-                    )}
-
-                    <div className="space-y-4 p-6">
-                      <p className="text-xs uppercase tracking-[0.25em] text-white/40">
-                        {story.name} • {story.substance}
-                      </p>
-
-                      <h3 className="text-2xl font-semibold">
-                        {story.answerCount} Answers Shared
-                      </h3>
-
-                      <div className="space-y-2 text-sm text-white/70">
-                        <p>Age: {story.ageRange || "Unknown"}</p>
-                        <p>Sex: {story.sex || "Unknown"}</p>
-                        <p>Location: {story.location || "Unknown"}</p>
-                      </div>
-
-                      {remainingAnswers.length > 0 && (
-                        <button
-                          onClick={() => toggleStory(story.sessionId)}
-                          className="w-full border border-white/20 px-6 py-4 text-sm uppercase tracking-[0.25em] transition hover:bg-white hover:text-black"
-                        >
-                          {isOpen ? "Hide Full Story" : "Watch Full Story"}
-                        </button>
-                      )}
-
-                      {isOpen && remainingAnswers.length > 0 && (
-                        <div className="border-t border-white/10 pt-6">
-                          <div className="space-y-8">
-                            {remainingAnswers.map(([question, video]) => {
-                              const index = Number(question);
-
-                              return (
-                                <div
-                                  key={question}
-                                  className="rounded-2xl border border-white/10 p-4"
-                                >
-                                  <p className="mb-3 text-xs uppercase tracking-[0.2em] text-[#d28b95]">
-                                    Question {index + 1}
-                                  </p>
-
-                                  <h4 className="mb-4 text-lg font-semibold leading-tight">
-                                    {QUESTIONS[index] ||
-                                      `Question ${index + 1}`}
-                                  </h4>
-
-                                  <video
-                                    src={video}
-                                    controls
-                                    playsInline
-                                    preload="metadata"
-                                    className="w-full rounded-xl bg-black"
-                                  />
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+              <video
+                src={videoUrl}
+                controls
+                playsInline
+                className="w-full rounded-2xl border border-white/10 bg-black"
+              />
             </div>
           )}
-        </section>
+        </div>
+
+        <div className="space-y-8">
+          <div>
+            <p className="mb-4 text-xs uppercase tracking-[0.3em] text-white/40">
+              Question {currentQuestion + 1} / {QUESTIONS.length}
+            </p>
+
+            <h1 className="text-4xl font-semibold leading-tight md:text-5xl">
+              {QUESTIONS[currentQuestion]}
+            </h1>
+          </div>
+
+          <div className="flex flex-wrap gap-4">
+            {!recording ? (
+              <button
+                onClick={startRecording}
+                className="rounded-xl bg-white px-6 py-4 font-semibold text-black"
+              >
+                Start Recording
+              </button>
+            ) : (
+              <button
+                onClick={stopRecording}
+                className="rounded-xl bg-red-500 px-6 py-4 font-semibold text-white"
+              >
+                Stop Recording
+              </button>
+            )}
+
+            <button
+              onClick={previousQuestion}
+              disabled={currentQuestion === 0 || isSaving}
+              className="rounded-xl border border-white/20 px-6 py-4 disabled:opacity-30"
+            >
+              Previous
+            </button>
+
+            <button
+              onClick={nextQuestion}
+              disabled={currentQuestion === QUESTIONS.length - 1 || isSaving}
+              className="rounded-xl border border-white/20 px-6 py-4 disabled:opacity-30"
+            >
+              Next
+            </button>
+          </div>
+
+          <button
+            onClick={publishStory}
+            disabled={isSaving}
+            className="w-full rounded-xl bg-white py-5 text-lg font-semibold text-black disabled:opacity-40"
+          >
+            {isSaving ? "Saving..." : `Save Question ${currentQuestion + 1}`}
+          </button>
+
+          <a
+            href="/shares"
+            className="block w-full rounded-xl border border-white/20 py-5 text-center text-sm uppercase tracking-[0.28em] text-white/70"
+          >
+            View Community Stories
+          </a>
+        </div>
       </section>
     </main>
   );
