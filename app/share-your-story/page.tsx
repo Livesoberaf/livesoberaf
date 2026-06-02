@@ -165,24 +165,42 @@ export default function ShareYourStoryPage() {
   function uploadInBackground(blob: Blob, questionIndex: number) {
     setUploadStatuses((prev) => ({ ...prev, [questionIndex]: "uploading" }));
 
-    const formData = new FormData();
-    formData.append("file", blob, `${sessionId}-q${questionIndex + 1}.webm`);
-    formData.append("sessionId", sessionId);
-    formData.append("questionIndex", String(questionIndex));
-    formData.append("name", name);
-    formData.append("substance", substance);
-    formData.append("stage", stage);
-    formData.append("ageRange", ageRange);
-    formData.append("sex", sex);
-    formData.append("location", location);
-    formData.append("consent", String(consent));
+    const safe = (v: string) =>
+      v.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
-    fetch("/api/upload-story-answer", { method: "POST", body: formData })
+    const publicId = `${safe(name)}-${safe(substance)}-${safe(location || "unknown")}-${safe(ageRange || "age")}-${safe(sex || "sex")}-${sessionId}-q${questionIndex + 1}`;
+
+    const context = [
+      `sessionId=${sessionId}`,
+      `name=${name}`,
+      `substance=${substance}`,
+      `stage=${stage}`,
+      `ageRange=${ageRange}`,
+      `sex=${sex}`,
+      `location=${location}`,
+      `consent=${consent}`,
+      `questionIndex=${questionIndex}`,
+      `questionNumber=${questionIndex + 1}`,
+      `source=community`,
+    ].join("|");
+
+    const formData = new FormData();
+    formData.append("file", blob, `${publicId}.webm`);
+    formData.append("upload_preset", "livesoberaf_stories");
+    formData.append("folder", "livesoberaf/stories/community");
+    formData.append("public_id", publicId);
+    formData.append("context", context);
+    formData.append("resource_type", "video");
+
+    fetch("https://api.cloudinary.com/v1_1/dsllk1oan/video/upload", {
+      method: "POST",
+      body: formData,
+    })
       .then((res) => res.json())
       .then((data) => {
         setUploadStatuses((prev) => ({
           ...prev,
-          [questionIndex]: data.videoUrl ? "done" : "error",
+          [questionIndex]: data.secure_url ? "done" : "error",
         }));
       })
       .catch(() => {
