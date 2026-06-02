@@ -271,7 +271,7 @@ function ProductCard({ product, children }: { product: Product; children: React.
     <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/5">
 
       {/* Image area */}
-      <div className="relative h-52 sm:h-40 w-full overflow-hidden bg-neutral-900">
+      <div className="relative h-64 sm:h-72 lg:h-80 w-full overflow-hidden bg-neutral-900">
         {hasImages ? (
           <img
             src={product.images[imageIndex]}
