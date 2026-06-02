@@ -118,6 +118,13 @@ export default function SharesPage() {
       <section className="mx-auto max-w-7xl">
 
         <div className="mb-16">
+          <a
+            href="/home"
+            className="mb-8 inline-block text-sm uppercase tracking-[0.3em] text-white/50 transition hover:text-white"
+          >
+            BACK
+          </a>
+
           <p className="text-sm uppercase tracking-[0.3em] text-white/50">
             LiveSoberAF
           </p>
