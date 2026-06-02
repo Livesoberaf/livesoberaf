@@ -75,7 +75,7 @@ function ScrambleLink({
       href={href}
       onClick={handleClick}
       className={`group w-full border-b border-white/10 py-6 sm:py-7 transition-opacity duration-200 ${
-        active ? "opacity-25" : "hover:opacity-50 cursor-pointer"
+        active ? "opacity-25" : "hover:text-[#d28b95] cursor-pointer"
       } ${className}`}
     >
       {display}
