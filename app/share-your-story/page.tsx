@@ -485,7 +485,7 @@ export default function ShareYourStoryPage() {
             muted
             playsInline
             style={{ filter: selectedFilter.css, display: previewUrl ? "none" : "block" }}
-            className="h-full w-full flex-1 object-cover lg:max-h-[calc(100vh-57px-52px)]"
+            className="h-full w-full flex-1 object-cover max-h-[45vh] lg:max-h-[calc(100vh-57px-52px)]"
           />
 
           {previewUrl && (
@@ -494,7 +494,7 @@ export default function ShareYourStoryPage() {
               controls
               autoPlay
               playsInline
-              className="h-full w-full flex-1 object-cover lg:max-h-[calc(100vh-57px-52px)]"
+              className="h-full w-full flex-1 object-cover max-h-[45vh] lg:max-h-[calc(100vh-57px-52px)]"
             />
           )}
 
