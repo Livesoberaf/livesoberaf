@@ -125,8 +125,24 @@ export default function ShareYourStoryPage() {
       if (!canvas || !video) return;
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
-      ctx.filter = selectedFilterRef.current.css;
+
+      const f = selectedFilterRef.current;
+
+      // Apply CSS filter for all non-mono filters
+      ctx.filter = f.id === "mono" ? "none" : f.css;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // For mono: convert pixels to grayscale (works in all browsers)
+      if (f.id === "mono") {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const d = imageData.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const gray = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
+          d[i] = d[i + 1] = d[i + 2] = gray;
+        }
+        ctx.putImageData(imageData, 0, 0);
+      }
+
       animationRef.current = requestAnimationFrame(drawFrame);
     }
     drawFrame();
@@ -512,6 +528,7 @@ export default function ShareYourStoryPage() {
               controls
               autoPlay
               playsInline
+              style={{ filter: selectedFilter.css }}
               className="h-full w-full flex-1 object-cover max-h-[45vh] lg:max-h-[calc(100vh-57px-52px)]"
             />
           )}
