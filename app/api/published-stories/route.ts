@@ -44,7 +44,7 @@ export async function GET() {
     const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString("base64");
 
     const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/resources/video/upload?prefix=livesoberaf/stories/community&max_results=100`,
+      `https://api.cloudinary.com/v1_1/${cloudName}/resources/video/upload?prefix=livesoberaf/stories/community&max_results=100&context=true`,
       {
         headers: {
           Authorization: `Basic ${auth}`,
@@ -70,6 +70,7 @@ export async function GET() {
       const parsed = parseFromPublicId(video.public_id);
       const questionIndex = getQuestionIndex(video.public_id);
       const sessionId = getSessionId(video.public_id);
+      const consent = video.context?.custom?.consent === "true";
 
       if (!sessions[sessionId]) {
         sessions[sessionId] = {
@@ -84,7 +85,12 @@ export async function GET() {
           answerCount: 0,
           firstVideo: video.secure_url,
           answers: {},
+          consent: false,
         };
+      }
+
+      if (consent) {
+        sessions[sessionId].consent = true;
       }
 
       sessions[sessionId].answers[questionIndex] = video.secure_url;
@@ -98,10 +104,12 @@ export async function GET() {
       ).length;
     });
 
-    const stories = Object.values(sessions).sort(
-      (a: any, b: any) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    const stories = Object.values(sessions)
+      .filter((s: any) => s.consent === true)
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
 
     return NextResponse.json({
       success: true,

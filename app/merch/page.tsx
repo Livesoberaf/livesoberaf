@@ -13,17 +13,24 @@ type Product = {
   type: ProductType;
   colour?: string;
   description: string;
-  priceLabel: string;
+  price: string;
+  images: string[];
 };
 
 const PRODUCTS: Product[] = [
   {
     id: "black-tee-1",
-    name: "LIVESOBERAF T-SHIRT 01",
+    name: "LIVESOBERAF TEE",
     type: "tee",
     colour: "BLACK",
     description: "Premium black tee with LIVESOBERAF design.",
-    priceLabel: "£TBC",
+    price: "£30.00",
+    images: [
+      "/merch/IMG_0140.jpeg",
+      "/merch/IMG_0167.jpeg",
+      "/merch/IMG_0168.jpeg",
+      "/merch/IMG_0179.jpeg",
+    ],
   },
   {
     id: "black-tee-2",
@@ -31,7 +38,8 @@ const PRODUCTS: Product[] = [
     type: "tee",
     colour: "BLACK",
     description: "Premium black tee with alternate LIVESOBERAF design.",
-    priceLabel: "£TBC",
+    price: "£TBC",
+    images: [],
   },
   {
     id: "white-tee-1",
@@ -39,7 +47,8 @@ const PRODUCTS: Product[] = [
     type: "tee",
     colour: "WHITE",
     description: "Premium white tee with LIVESOBERAF design.",
-    priceLabel: "£TBC",
+    price: "£TBC",
+    images: [],
   },
   {
     id: "white-tee-2",
@@ -47,15 +56,21 @@ const PRODUCTS: Product[] = [
     type: "tee",
     colour: "WHITE",
     description: "Premium white tee with alternate LIVESOBERAF design.",
-    priceLabel: "£TBC",
+    price: "£TBC",
+    images: [],
   },
   {
     id: "white-bottle",
-    name: "LIVESOBERAF WATER BOTTLE 01",
+    name: "LIVESOBERAF WATER BOTTLE",
     type: "bottle",
     colour: "WHITE",
-    description: "Minimal white bottle for everyday carry.",
-    priceLabel: "£TBC",
+    description: "Minimal bottle for everyday carry.",
+    price: "£25.00",
+    images: [
+      "/merch/IMG_4351.jpeg",
+      "/merch/IMG_4351-1.jpeg",
+      "/merch/IMG_4290.jpeg",
+    ],
   },
   {
     id: "black-bottle",
@@ -63,15 +78,21 @@ const PRODUCTS: Product[] = [
     type: "bottle",
     colour: "BLACK",
     description: "Minimal black bottle for everyday carry.",
-    priceLabel: "£TBC",
+    price: "£25.00",
+    images: [],
   },
   {
     id: "tote-bag",
     name: "LIVESOBERAF TOTE BAG",
     type: "tote",
-    colour: "NATURAL",
+    colour: "WHITE",
     description: "Simple tote bag with LIVESOBERAF branding.",
-    priceLabel: "£TBC",
+    price: "£15.00",
+    images: [
+      "/merch/IMG_0195.jpeg",
+      "/merch/IMG_0196.jpeg",
+      "/merch/IMG_0197.jpeg",
+    ],
   },
   {
     id: "card-1-year",
@@ -79,7 +100,8 @@ const PRODUCTS: Product[] = [
     type: "cards",
     colour: "WHITE",
     description: "Milestone card celebrating one year LIVESOBERAF.",
-    priceLabel: "£TBC",
+    price: "£TBC",
+    images: [],
   },
 ];
 
@@ -93,9 +115,7 @@ export default function MerchPage() {
 
   const [selectedCardQuantities, setSelectedCardQuantities] = useState<
     Record<string, string>
-  >({
-    "card-1-year": "1",
-  });
+  >({ "card-1-year": "1" });
 
   const getCheckoutUrl = (
     productId: string,
@@ -103,35 +123,26 @@ export default function MerchPage() {
     selectedSize?: string,
     selectedQuantity?: string
   ) => {
-    // REPLACE THESE WITH YOUR REAL STRIPE PAYMENT LINKS LATER
     const stripeLinks: Record<string, string> = {
-      // Examples:
+      // Add Stripe payment links here when ready:
       // "black-tee-1-S": "https://buy.stripe.com/...",
-      // "black-tee-1-M": "https://buy.stripe.com/...",
-      // "card-1-year-1": "https://buy.stripe.com/...",
-      // "card-1-year-2": "https://buy.stripe.com/...",
-      // "white-bottle": "https://buy.stripe.com/...",
     };
 
     if (type === "tee" && selectedSize) {
       return stripeLinks[`${productId}-${selectedSize}`] || "";
     }
-
     if (type === "cards" && selectedQuantity) {
       return stripeLinks[`${productId}-${selectedQuantity}`] || "";
     }
-
     return stripeLinks[productId] || "";
   };
 
-  const groupedProducts = useMemo(() => {
-    return {
-      tees: PRODUCTS.filter((p) => p.type === "tee"),
-      bottles: PRODUCTS.filter((p) => p.type === "bottle"),
-      tote: PRODUCTS.filter((p) => p.type === "tote"),
-      cards: PRODUCTS.filter((p) => p.type === "cards"),
-    };
-  }, []);
+  const groupedProducts = useMemo(() => ({
+    tees: PRODUCTS.filter((p) => p.type === "tee"),
+    bottles: PRODUCTS.filter((p) => p.type === "bottle"),
+    tote: PRODUCTS.filter((p) => p.type === "tote"),
+    cards: PRODUCTS.filter((p) => p.type === "cards"),
+  }), []);
 
   return (
     <main className="min-h-screen bg-black px-6 py-16 text-white">
@@ -143,44 +154,26 @@ export default function MerchPage() {
           BACK
         </a>
 
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.35em] text-red-300/70">
-              MERCHANDISE
-            </p>
-
-            <h1 className="mt-4 text-5xl font-semibold tracking-[0.2em] md:text-7xl">
-              LIVESOBERAF STORE
-            </h1>
-
-            <p className="mt-6 max-w-3xl text-lg leading-8 text-white/70">
-              A small first collection. Clean, simple, and designed to feel
-              considered. Product photography can be dropped in tomorrow
-              without changing the store structure.
-            </p>
-          </div>
-
-          <div className="rounded-[2rem] border border-white/10 bg-white/5 px-6 py-5 text-sm uppercase tracking-[0.2em] text-white/60">
-            HIGH-END FIRST RELEASE
-          </div>
+        <div className="mb-16">
+          <p className="text-sm uppercase tracking-[0.35em] text-[#d28b95]">
+            MERCHANDISE
+          </p>
+          <h1 className="mt-4 text-5xl font-semibold tracking-[0.2em] md:text-7xl">
+            LIVESOBERAF STORE
+          </h1>
+          <p className="mt-6 max-w-2xl text-lg text-white/60">
+            A first collection. Clean, considered, and built to last.
+          </p>
         </div>
 
-        <div className="mt-16 space-y-16">
+        <div className="space-y-20">
           <ProductSection title="T-SHIRTS">
             {groupedProducts.tees.map((product) => {
               const selectedSize = selectedSizes[product.id] || "M";
-              const checkoutUrl = getCheckoutUrl(
-                product.id,
-                product.type,
-                selectedSize
-              );
+              const checkoutUrl = getCheckoutUrl(product.id, product.type, selectedSize);
 
               return (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  imageTone={product.colour === "WHITE" ? "light" : "dark"}
-                >
+                <ProductCard key={product.id} product={product}>
                   <div>
                     <label className="block text-xs uppercase tracking-[0.25em] text-white/40">
                       SIZE
@@ -188,22 +181,16 @@ export default function MerchPage() {
                     <select
                       value={selectedSize}
                       onChange={(e) =>
-                        setSelectedSizes((prev) => ({
-                          ...prev,
-                          [product.id]: e.target.value,
-                        }))
+                        setSelectedSizes((prev) => ({ ...prev, [product.id]: e.target.value }))
                       }
                       className="mt-3 w-full border border-white/15 bg-black px-4 py-3 text-sm text-white outline-none"
                     >
                       {SIZE_OPTIONS.map((size) => (
-                        <option key={size} value={size}>
-                          {size}
-                        </option>
+                        <option key={size} value={size}>{size}</option>
                       ))}
                     </select>
                   </div>
-
-                  <BuyButton checkoutUrl={checkoutUrl} />
+                  <BuyButton checkoutUrl={checkoutUrl} price={product.price} />
                 </ProductCard>
               );
             })}
@@ -212,14 +199,9 @@ export default function MerchPage() {
           <ProductSection title="WATER BOTTLES">
             {groupedProducts.bottles.map((product) => {
               const checkoutUrl = getCheckoutUrl(product.id, product.type);
-
               return (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  imageTone={product.colour === "WHITE" ? "light" : "dark"}
-                >
-                  <BuyButton checkoutUrl={checkoutUrl} />
+                <ProductCard key={product.id} product={product}>
+                  <BuyButton checkoutUrl={checkoutUrl} price={product.price} />
                 </ProductCard>
               );
             })}
@@ -228,10 +210,9 @@ export default function MerchPage() {
           <ProductSection title="TOTE BAG">
             {groupedProducts.tote.map((product) => {
               const checkoutUrl = getCheckoutUrl(product.id, product.type);
-
               return (
-                <ProductCard key={product.id} product={product} imageTone="mid">
-                  <BuyButton checkoutUrl={checkoutUrl} />
+                <ProductCard key={product.id} product={product}>
+                  <BuyButton checkoutUrl={checkoutUrl} price={product.price} />
                 </ProductCard>
               );
             })}
@@ -239,17 +220,10 @@ export default function MerchPage() {
 
           <ProductSection title="MILESTONE CARDS">
             {groupedProducts.cards.map((product) => {
-              const selectedQuantity =
-                selectedCardQuantities[product.id] || "1";
-              const checkoutUrl = getCheckoutUrl(
-                product.id,
-                product.type,
-                undefined,
-                selectedQuantity
-              );
-
+              const selectedQuantity = selectedCardQuantities[product.id] || "1";
+              const checkoutUrl = getCheckoutUrl(product.id, product.type, undefined, selectedQuantity);
               return (
-                <ProductCard key={product.id} product={product} imageTone="light">
+                <ProductCard key={product.id} product={product}>
                   <div>
                     <label className="block text-xs uppercase tracking-[0.25em] text-white/40">
                       QUANTITY
@@ -257,22 +231,16 @@ export default function MerchPage() {
                     <select
                       value={selectedQuantity}
                       onChange={(e) =>
-                        setSelectedCardQuantities((prev) => ({
-                          ...prev,
-                          [product.id]: e.target.value,
-                        }))
+                        setSelectedCardQuantities((prev) => ({ ...prev, [product.id]: e.target.value }))
                       }
                       className="mt-3 w-full border border-white/15 bg-black px-4 py-3 text-sm text-white outline-none"
                     >
                       {CARD_QUANTITY_OPTIONS.map((qty) => (
-                        <option key={qty} value={qty}>
-                          {qty}
-                        </option>
+                        <option key={qty} value={qty}>{qty}</option>
                       ))}
                     </select>
                   </div>
-
-                  <BuyButton checkoutUrl={checkoutUrl} />
+                  <BuyButton checkoutUrl={checkoutUrl} price={product.price} />
                 </ProductCard>
               );
             })}
@@ -283,64 +251,68 @@ export default function MerchPage() {
   );
 }
 
-function ProductSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function ProductSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <div className="mb-8 flex items-center justify-between gap-4">
-        <h2 className="text-2xl font-semibold tracking-[0.15em]">{title}</h2>
+      <div className="mb-8 flex items-center gap-4">
+        <h2 className="text-xs uppercase tracking-[0.3em] text-white/40">{title}</h2>
         <div className="h-px flex-1 bg-white/10" />
       </div>
-
-      <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">{children}</div>
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{children}</div>
     </section>
   );
 }
 
-function ProductCard({
-  product,
-  imageTone,
-  children,
-}: {
-  product: Product;
-  imageTone: "dark" | "light" | "mid";
-  children: React.ReactNode;
-}) {
-  const imageClasses =
-    imageTone === "light"
-      ? "bg-white text-black"
-      : imageTone === "mid"
-      ? "bg-neutral-200 text-black"
-      : "bg-neutral-900 text-white";
+function ProductCard({ product, children }: { product: Product; children: React.ReactNode }) {
+  const [imageIndex, setImageIndex] = useState(0);
+  const hasImages = product.images.length > 0;
 
   return (
     <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/5">
-      <div
-        className={`aspect-[4/5] w-full ${imageClasses} flex items-center justify-center text-center text-sm uppercase tracking-[0.35em]`}
-      >
-        PRODUCT IMAGE
+
+      {/* Image area */}
+      <div className="relative h-32 w-full overflow-hidden bg-neutral-900">
+        {hasImages ? (
+          <img
+            src={product.images[imageIndex]}
+            alt={product.name}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-xs uppercase tracking-[0.3em] text-white/30">
+              Coming Soon
+            </p>
+          </div>
+        )}
       </div>
 
-      <div className="space-y-6 p-6">
+      {/* Image navigation */}
+      {hasImages && product.images.length > 1 && (
+        <div className="flex items-center justify-between border-b border-white/10 px-4 py-2">
+          <button
+            onClick={() => setImageIndex((i) => (i - 1 + product.images.length) % product.images.length)}
+            className="px-2 py-1 text-white/50 hover:text-white transition"
+          >
+            ←
+          </button>
+          <span className="text-xs text-white/30">
+            {imageIndex + 1} / {product.images.length}
+          </span>
+          <button
+            onClick={() => setImageIndex((i) => (i + 1) % product.images.length)}
+            className="px-2 py-1 text-white/50 hover:text-white transition"
+          >
+            →
+          </button>
+        </div>
+      )}
+
+      {/* Product info */}
+      <div className="space-y-5 p-6">
         <div>
-          <p className="text-xs uppercase tracking-[0.25em] text-white/40">
-            {product.colour || "LIVESOBERAF"}
-          </p>
-
-          <h3 className="mt-3 text-2xl font-semibold leading-tight">
-            {product.name}
-          </h3>
-
-          <p className="mt-4 text-white/70">{product.description}</p>
-
-          <p className="mt-4 text-sm uppercase tracking-[0.25em] text-white/50">
-            {product.priceLabel}
-          </p>
+          <h3 className="text-xl font-semibold leading-tight">{product.name}</h3>
+          <p className="mt-2 text-white/60">{product.description}</p>
         </div>
 
         {children}
@@ -349,15 +321,13 @@ function ProductCard({
   );
 }
 
-function BuyButton({ checkoutUrl }: { checkoutUrl: string }) {
+function BuyButton({ checkoutUrl, price }: { checkoutUrl: string; price: string }) {
   if (!checkoutUrl) {
     return (
-      <button
-        disabled
-        className="w-full border border-white/10 px-6 py-4 text-sm uppercase tracking-[0.3em] text-white/30"
-      >
-        PAYMENT LINK TO ADD
-      </button>
+      <div className="flex items-center justify-between border border-white/10 px-6 py-4">
+        <span className="text-sm uppercase tracking-[0.2em] text-white/60">{price}</span>
+        <span className="text-xs uppercase tracking-[0.25em] text-white/30">Coming Soon</span>
+      </div>
     );
   }
 
@@ -366,9 +336,10 @@ function BuyButton({ checkoutUrl }: { checkoutUrl: string }) {
       href={checkoutUrl}
       target="_blank"
       rel="noreferrer"
-      className="block w-full border border-white/20 px-6 py-4 text-center text-sm uppercase tracking-[0.3em] transition hover:bg-white hover:text-black"
+      className="flex items-center justify-between border border-white/20 px-6 py-4 transition hover:bg-white hover:text-black"
     >
-      BUY NOW
+      <span className="text-sm uppercase tracking-[0.2em]">{price}</span>
+      <span className="text-xs uppercase tracking-[0.25em]">Buy Now</span>
     </a>
   );
 }
