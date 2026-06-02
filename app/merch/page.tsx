@@ -276,7 +276,7 @@ function ProductCard({ product, children }: { product: Product; children: React.
           <img
             src={product.images[imageIndex]}
             alt={product.name}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-contain"
           />
         ) : (
           <div className="flex h-full items-center justify-center">
