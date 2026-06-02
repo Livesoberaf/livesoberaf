@@ -122,6 +122,7 @@ export default function ShareYourStoryPage() {
 
     // Draw loop: copies video frames to canvas with filter baked in
     function drawFrame() {
+      if (!canvas) return;
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
       ctx.filter = selectedFilterRef.current.css;
