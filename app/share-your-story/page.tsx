@@ -2,27 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 
+// 4 short present-moment questions — answered on the day, matched to others by day number
 const QUESTIONS = [
-  "What was life like before recovery?",
-  "What made you realise things needed to change?",
-  "What was the hardest part of addiction?",
-  "What did your lowest point look like?",
-  "Who did addiction affect around you?",
-  "What finally pushed you toward recovery?",
-  "What was your first day sober like?",
-  "What fears did you have about getting clean?",
-  "What helped you stay sober early on?",
-  "What role did support play in recovery?",
-  "How has your mindset changed?",
-  "What does a normal day look like now?",
-  "What are you most proud of?",
-  "How has recovery changed relationships?",
-  "What triggers still affect you?",
-  "How do you handle difficult days now?",
-  "What would you say to someone struggling?",
-  "What have you rediscovered about yourself?",
-  "What does happiness mean to you today?",
-  "What is life like now?",
+  "How are you feeling today, honestly?",
+  "What's been hardest about today?",
+  "What's been helping you get through it?",
+  "What would you say to someone else on this exact day?",
 ];
 
 const FILTERS = [
@@ -35,44 +20,85 @@ const FILTERS = [
 
 type UploadStatus = "idle" | "uploading" | "done" | "error";
 
-export default function ShareYourStoryPage() {
-  // Live camera feed shown to user
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  // Offscreen canvas used only during recording to bake filter in
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const animationRef = useRef<number | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+type SavedSession = {
+  sessionId: string;
+  currentQuestion: number;
+  name: string;
+  dayNumber: string;
+  pathway: string;
+  ageRange: string;
+  sex: string;
+  region: string;
+  consent: boolean;
+  savedAt: string;
+};
 
-  const [started, setStarted] = useState(false);
-  const [stream, setStream] = useState<MediaStream | null>(null);
+const STORAGE_KEY = "lsaf_peer_story_session";
+
+function saveProgress(data: Record<string, unknown>) {
+  try {
+    const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ ...existing, ...data, savedAt: new Date().toISOString() })
+    );
+  } catch {}
+}
+
+function clearProgress() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+}
+
+export default function ShareYourStoryPage() {
+  const videoRef         = useRef<HTMLVideoElement | null>(null);
+  const canvasRef        = useRef<HTMLCanvasElement | null>(null);
+  const animationRef     = useRef<number | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef        = useRef<Blob[]>([]);
+  const timerRef         = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const [started, setStarted]         = useState(false);
+  const [stream, setStream]           = useState<MediaStream | null>(null);
   const [cameraError, setCameraError] = useState(false);
 
   const [selectedFilter, setSelectedFilter] = useState(FILTERS[0]);
   const selectedFilterRef = useRef(FILTERS[0]);
 
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [recording, setRecording] = useState(false);
+  const [recording, setRecording]       = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [seconds, setSeconds] = useState(0);
-  const [finished, setFinished] = useState(false);
+  const [previewUrl, setPreviewUrl]     = useState<string | null>(null);
+  const [seconds, setSeconds]           = useState(0);
+  const [finished, setFinished]         = useState(false);
 
   const [uploadStatuses, setUploadStatuses] = useState<Record<number, UploadStatus>>({});
 
-  const [sessionId] = useState(() => crypto.randomUUID());
-  const [name, setName] = useState("");
-  const [substance, setSubstance] = useState("");
-  const [stage, setStage] = useState("");
+  const [sessionId, setSessionId]         = useState(() => crypto.randomUUID());
+  const [savedSession, setSavedSession]   = useState<SavedSession | null>(null);
+
+  // Form fields
+  const [name, setName]         = useState("");
+  const [dayNumber, setDayNumber] = useState("");   // which recovery day they're on
+  const [pathway, setPathway]   = useState("");     // drug / addiction
   const [ageRange, setAgeRange] = useState("");
-  const [sex, setSex] = useState("");
-  const [location, setLocation] = useState("");
-  const [consent, setConsent] = useState(false);
+  const [sex, setSex]           = useState("");
+  const [region, setRegion]     = useState("");     // country / city — enough to feel "someone like me"
+  const [consent, setConsent]   = useState(false);
 
-  const canBegin = name && substance && stage && ageRange && sex && location && consent;
+  const canBegin = name && dayNumber && pathway && ageRange && sex && region && consent;
 
-  // Keep ref in sync so the draw loop always reads the latest filter
+  // Check localStorage for a saved session on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed: SavedSession = JSON.parse(raw);
+      if (parsed.sessionId && parsed.currentQuestion > 0) {
+        setSavedSession(parsed);
+      }
+    } catch {}
+  }, []);
+
   function selectFilter(f: typeof FILTERS[0]) {
     setSelectedFilter(f);
     selectedFilterRef.current = f;
@@ -87,12 +113,8 @@ export default function ShareYourStoryPage() {
           video: { facingMode: "user" },
           audio: true,
         });
-
         setStream(mediaStream);
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
-        }
+        if (videoRef.current) videoRef.current.srcObject = mediaStream;
       } catch {
         setCameraError(true);
       }
@@ -107,7 +129,7 @@ export default function ShareYourStoryPage() {
   }, [started]);
 
   function startRecording() {
-    const video = videoRef.current;
+    const video  = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas || !stream) return;
 
@@ -116,23 +138,16 @@ export default function ShareYourStoryPage() {
     setPreviewUrl(null);
     setSeconds(0);
 
-    // Size the offscreen canvas to match the video
-    canvas.width = video.videoWidth || 640;
+    canvas.width  = video.videoWidth  || 640;
     canvas.height = video.videoHeight || 480;
 
-    // Draw loop: copies video frames to canvas with filter baked in
     function drawFrame() {
       if (!canvas || !video) return;
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
-
       const f = selectedFilterRef.current;
-
-      // Apply CSS filter for all non-mono filters
       ctx.filter = f.id === "mono" ? "none" : f.css;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      // For mono: convert pixels to grayscale (works in all browsers)
       if (f.id === "mono") {
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const d = imageData.data;
@@ -142,21 +157,15 @@ export default function ShareYourStoryPage() {
         }
         ctx.putImageData(imageData, 0, 0);
       }
-
       animationRef.current = requestAnimationFrame(drawFrame);
     }
     drawFrame();
 
-    // Record from canvas stream + original audio
     const canvasStream = canvas.captureStream(30);
     stream.getAudioTracks().forEach((t) => canvasStream.addTrack(t));
 
     const recorder = new MediaRecorder(canvasStream, { mimeType: "video/webm" });
-
-    recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) chunksRef.current.push(e.data);
-    };
-
+    recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
     recorder.onstop = () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       const blob = new Blob(chunksRef.current, { type: "video/webm" });
@@ -169,7 +178,6 @@ export default function ShareYourStoryPage() {
     mediaRecorderRef.current = recorder;
     recorder.start();
     setRecording(true);
-
     timerRef.current = setInterval(() => setSeconds((s) => s + 1), 1000);
   }
 
@@ -184,26 +192,27 @@ export default function ShareYourStoryPage() {
     const safe = (v: string) =>
       v.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
-    const publicId = `${safe(name)}-${safe(substance)}-${safe(location || "unknown")}-${safe(ageRange || "age")}-${safe(sex || "sex")}-${sessionId}-q${questionIndex + 1}`;
+    // public_id encodes enough to find/group the clip later
+    const publicId = `${safe(pathway)}-day${dayNumber}-${safe(ageRange)}-${safe(sex)}-${sessionId}-q${questionIndex + 1}`;
 
+    // All the metadata the matching engine will need
     const context = [
       `sessionId=${sessionId}`,
       `name=${name}`,
-      `substance=${substance}`,
-      `stage=${stage}`,
+      `dayNumber=${dayNumber}`,
+      `pathway=${pathway}`,
       `ageRange=${ageRange}`,
       `sex=${sex}`,
-      `location=${location}`,
+      `region=${region}`,
       `consent=${consent}`,
       `questionIndex=${questionIndex}`,
-      `questionNumber=${questionIndex + 1}`,
-      `source=community`,
+      `source=peer`,
     ].join("|");
 
     const formData = new FormData();
     formData.append("file", blob, `${publicId}.webm`);
     formData.append("upload_preset", "livesoberaf_stories");
-    formData.append("folder", "livesoberaf/stories/community");
+    formData.append("folder", "livesoberaf/stories/peer");
     formData.append("public_id", publicId);
     formData.append("context", context);
     formData.append("resource_type", "video");
@@ -214,10 +223,29 @@ export default function ShareYourStoryPage() {
     })
       .then((res) => res.json())
       .then((data) => {
-        setUploadStatuses((prev) => ({
-          ...prev,
-          [questionIndex]: data.secure_url ? "done" : "error",
-        }));
+        if (data.secure_url) {
+          // Record in Supabase — fire-and-forget, Cloudinary is the source of truth
+          fetch("/api/peer-clip", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId,
+              questionIndex,
+              sharerName:    name,
+              dayNumber,
+              pathway,
+              ageRange,
+              sex,
+              region,
+              cloudinaryUrl: data.secure_url,
+              consent,
+            }),
+          }).catch(() => null);
+
+          setUploadStatuses((prev) => ({ ...prev, [questionIndex]: "done" }));
+        } else {
+          setUploadStatuses((prev) => ({ ...prev, [questionIndex]: "error" }));
+        }
       })
       .catch(() => {
         setUploadStatuses((prev) => ({ ...prev, [questionIndex]: "error" }));
@@ -227,7 +255,7 @@ export default function ShareYourStoryPage() {
   function saveAndNext() {
     if (!recordedBlob) return;
 
-    const blob = recordedBlob;
+    const blob          = recordedBlob;
     const questionIndex = currentQuestion;
 
     setRecordedBlob(null);
@@ -236,8 +264,10 @@ export default function ShareYourStoryPage() {
     uploadInBackground(blob, questionIndex);
 
     if (currentQuestion < QUESTIONS.length - 1) {
+      saveProgress({ currentQuestion: questionIndex + 1 });
       setCurrentQuestion((q) => q + 1);
     } else {
+      clearProgress();
       setFinished(true);
     }
   }
@@ -248,12 +278,74 @@ export default function ShareYourStoryPage() {
     setSeconds(0);
   }
 
+  function handleResumeContinue() {
+    if (!savedSession) return;
+    setSessionId(savedSession.sessionId);
+    setName(savedSession.name);
+    setDayNumber(savedSession.dayNumber);
+    setPathway(savedSession.pathway);
+    setAgeRange(savedSession.ageRange);
+    setSex(savedSession.sex);
+    setRegion(savedSession.region);
+    setConsent(savedSession.consent);
+    setCurrentQuestion(savedSession.currentQuestion);
+    const statuses: Record<number, UploadStatus> = {};
+    for (let i = 0; i < savedSession.currentQuestion; i++) statuses[i] = "done";
+    setUploadStatuses(statuses);
+    setSavedSession(null);
+    setStarted(true);
+  }
+
+  function handleResumeStartFresh() {
+    clearProgress();
+    setSavedSession(null);
+  }
+
   const formatTime = (s: number) =>
     `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
   const answeredCount = Object.values(uploadStatuses).filter(
     (s) => s === "done" || s === "uploading"
   ).length;
+
+  // ── Resume prompt ─────────────────────────────────────────────────────────────
+
+  if (savedSession && !started) {
+    const savedDate = new Date(savedSession.savedAt).toLocaleDateString("en-GB", {
+      day: "numeric", month: "long",
+    });
+
+    return (
+      <main className="min-h-screen bg-black px-6 py-16 text-white">
+        <section className="mx-auto max-w-2xl">
+          <p className="text-sm uppercase tracking-[0.35em] text-red-300/70">LIVESOBERAF</p>
+          <h1 className="mt-4 text-4xl sm:text-5xl font-semibold tracking-[0.18em] break-words">
+            CONTINUE YOUR CHECK-IN
+          </h1>
+          <p className="mt-8 max-w-xl text-xl leading-8 text-white/75">
+            You answered {savedSession.currentQuestion} of {QUESTIONS.length} questions on {savedDate}.
+          </p>
+          <p className="mt-4 text-lg leading-8 text-white/60">
+            Those answers are saved. Pick up where you left off, or start again.
+          </p>
+          <div className="mt-12 flex flex-col gap-4 max-w-sm">
+            <button
+              onClick={handleResumeContinue}
+              className="border border-white/20 px-8 py-5 text-sm uppercase tracking-[0.3em] transition hover:bg-white hover:text-black"
+            >
+              Continue from question {savedSession.currentQuestion + 1}
+            </button>
+            <button
+              onClick={handleResumeStartFresh}
+              className="px-8 py-4 text-sm uppercase tracking-[0.3em] text-white/30 transition hover:text-white"
+            >
+              Start fresh instead
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   // ── Onboarding form ──────────────────────────────────────────────────────────
 
@@ -262,14 +354,13 @@ export default function ShareYourStoryPage() {
       <main className="min-h-screen bg-black px-6 py-16 text-white">
         <section className="mx-auto max-w-2xl">
 
-          <p className="text-sm uppercase tracking-[0.4em] text-[#d28b95]">
-            Share Your Story
-          </p>
-
-          <h1 className="mt-4 text-5xl font-bold">Before We Begin</h1>
-
-          <p className="mt-6 max-w-xl text-lg text-white/60">
-            A few details before you start. This helps us organise your story and show it to the right people.
+          <p className="text-sm uppercase tracking-[0.35em] text-red-300/70">LIVESOBERAF</p>
+          <h1 className="mt-4 text-4xl sm:text-5xl font-semibold tracking-[0.18em] break-words">
+            SHARE YOUR DAY
+          </h1>
+          <p className="mt-6 max-w-xl text-lg leading-8 text-white/60">
+            A few quick details, then four short questions about where you are today.
+            Your answers will help someone else on the same day of their recovery.
           </p>
 
           <div className="mt-12 space-y-8">
@@ -288,11 +379,28 @@ export default function ShareYourStoryPage() {
 
             <div>
               <label className="mb-2 block text-xs uppercase tracking-[0.25em] text-white/50">
-                Recovery focus
+                What day of recovery are you on?
+              </label>
+              <input
+                type="number"
+                min="1"
+                placeholder="e.g. 7"
+                value={dayNumber}
+                onChange={(e) => setDayNumber(e.target.value)}
+                className="w-full border border-white/20 bg-black px-5 py-4 text-white outline-none focus:border-white/50 transition"
+              />
+              <p className="mt-2 text-xs text-white/30">
+                Day 1 is your first sober day. This is what connects your answers to others on the same day.
+              </p>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs uppercase tracking-[0.25em] text-white/50">
+                What are you recovering from?
               </label>
               <select
-                value={substance}
-                onChange={(e) => setSubstance(e.target.value)}
+                value={pathway}
+                onChange={(e) => setPathway(e.target.value)}
                 className="w-full border border-white/20 bg-black px-5 py-4 text-white outline-none focus:border-white/50 transition"
               >
                 <option value="">Select</option>
@@ -303,25 +411,6 @@ export default function ShareYourStoryPage() {
                 <option>Gambling</option>
                 <option>Cannabis</option>
                 <option>Other</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-xs uppercase tracking-[0.25em] text-white/50">
-                Where are you in recovery?
-              </label>
-              <select
-                value={stage}
-                onChange={(e) => setStage(e.target.value)}
-                className="w-full border border-white/20 bg-black px-5 py-4 text-white outline-none focus:border-white/50 transition"
-              >
-                <option value="">Select</option>
-                <option>Day 1</option>
-                <option>1 Week</option>
-                <option>1 Month</option>
-                <option>6 Months</option>
-                <option>1 Year</option>
-                <option>Multiple Years</option>
               </select>
             </div>
 
@@ -336,14 +425,13 @@ export default function ShareYourStoryPage() {
                   className="w-full border border-white/20 bg-black px-5 py-4 text-white outline-none focus:border-white/50 transition"
                 >
                   <option value="">Select</option>
-                  <option>18-24</option>
-                  <option>25-34</option>
-                  <option>35-44</option>
-                  <option>45-54</option>
+                  <option>18–24</option>
+                  <option>25–34</option>
+                  <option>35–44</option>
+                  <option>45–54</option>
                   <option>55+</option>
                 </select>
               </div>
-
               <div>
                 <label className="mb-2 block text-xs uppercase tracking-[0.25em] text-white/50">
                   Sex
@@ -364,12 +452,12 @@ export default function ShareYourStoryPage() {
 
             <div>
               <label className="mb-2 block text-xs uppercase tracking-[0.25em] text-white/50">
-                Location
+                Where are you? (country or city)
               </label>
               <input
                 placeholder="e.g. Manchester, UK"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
                 className="w-full border border-white/20 bg-black px-5 py-4 text-white outline-none focus:border-white/50 transition"
               />
             </div>
@@ -384,10 +472,11 @@ export default function ShareYourStoryPage() {
                 />
                 <div>
                   <p className="text-white/90">
-                    I am happy for my story to be shared by LiveSoberAF.
+                    I'm happy for my answers to be shown to others on the same day of their recovery.
                   </p>
                   <p className="mt-1 text-sm text-white/45">
-                    Your story may appear on the website and help others in recovery.
+                    Your answers will only be shown to people in recovery, matched to your day.
+                    You can use just your first name.
                   </p>
                 </div>
               </label>
@@ -395,10 +484,13 @@ export default function ShareYourStoryPage() {
 
             <button
               disabled={!canBegin}
-              onClick={() => setStarted(true)}
+              onClick={() => {
+                saveProgress({ sessionId, currentQuestion: 0, name, dayNumber, pathway, ageRange, sex, region, consent });
+                setStarted(true);
+              }}
               className="w-full border border-white/20 py-5 text-sm uppercase tracking-[0.3em] transition hover:bg-white hover:text-black disabled:opacity-30"
             >
-              Begin Recording
+              Start recording
             </button>
 
           </div>
@@ -407,25 +499,25 @@ export default function ShareYourStoryPage() {
     );
   }
 
-  // ── Finished state ───────────────────────────────────────────────────────────
+  // ── Finished ─────────────────────────────────────────────────────────────────
 
   if (finished) {
     const pendingCount = Object.values(uploadStatuses).filter((s) => s === "uploading").length;
-    const errorCount = Object.values(uploadStatuses).filter((s) => s === "error").length;
+    const errorCount   = Object.values(uploadStatuses).filter((s) => s === "error").length;
 
     return (
       <main className="min-h-screen bg-black px-6 py-16 text-white flex items-center">
         <section className="mx-auto max-w-2xl text-center">
-          <p className="text-sm uppercase tracking-[0.35em] text-[#d28b95]">Thank you</p>
-
-          <h1 className="mt-6 text-5xl font-bold">Your story is being saved.</h1>
-
-          <p className="mt-6 text-lg text-white/65">
+          <p className="text-sm uppercase tracking-[0.35em] text-red-300/70">Thank you</p>
+          <h1 className="mt-6 text-4xl sm:text-5xl font-semibold tracking-[0.18em]">
+            YOUR DAY {dayNumber} IS SAVED.
+          </h1>
+          <p className="mt-6 text-lg leading-8 text-white/65">
             {pendingCount > 0
               ? `${pendingCount} answer${pendingCount > 1 ? "s" : ""} still uploading — keep this tab open for a moment.`
               : errorCount > 0
-              ? "Most answers saved. A few had upload errors — you can re-record those questions."
-              : "All answers saved. Your story will appear in the community shortly."}
+              ? "Most answers saved. A few had upload errors."
+              : "All four answers saved. Someone on their day " + dayNumber + " will hear you."}
           </p>
 
           <div className="mt-10 flex flex-wrap justify-center gap-2">
@@ -436,9 +528,9 @@ export default function ShareYourStoryPage() {
                   key={i}
                   title={`Q${i + 1}`}
                   className={`h-3 w-3 rounded-full transition-all ${
-                    status === "done" ? "bg-white"
+                    status === "done"      ? "bg-white"
                     : status === "uploading" ? "animate-pulse bg-white/50"
-                    : status === "error" ? "bg-red-500"
+                    : status === "error"     ? "bg-red-500"
                     : "bg-white/15"
                   }`}
                 />
@@ -450,7 +542,7 @@ export default function ShareYourStoryPage() {
             href="/shares"
             className="mt-12 inline-block border border-white/20 px-10 py-5 text-sm uppercase tracking-[0.3em] transition hover:bg-white hover:text-black"
           >
-            View Community Stories
+            View community stories
           </a>
         </section>
       </main>
@@ -474,35 +566,32 @@ export default function ShareYourStoryPage() {
   return (
     <main className="min-h-screen bg-black text-white">
 
-      {/* Offscreen canvas — only used during recording to bake filter in */}
       <canvas ref={canvasRef} className="hidden" />
 
       {/* Progress bar */}
       <div className="sticky top-0 z-10 border-b border-white/10 bg-black/90 backdrop-blur px-6 py-4">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
           <p className="text-sm uppercase tracking-[0.3em] text-white/50">
-            Question {currentQuestion + 1} of {QUESTIONS.length}
+            Day {dayNumber} · Question {currentQuestion + 1} of {QUESTIONS.length}
           </p>
-
-          <div className="flex gap-1.5">
+          <div className="flex gap-2">
             {QUESTIONS.map((_, i) => {
-              const status = uploadStatuses[i] || "idle";
+              const status    = uploadStatuses[i] || "idle";
               const isCurrent = i === currentQuestion;
               return (
                 <div
                   key={i}
-                  className={`h-1.5 w-1.5 rounded-full transition-all ${
-                    status === "done" ? "bg-white"
+                  className={`h-2 w-2 rounded-full transition-all ${
+                    status === "done"      ? "bg-white"
                     : status === "uploading" ? "animate-pulse bg-white/60"
-                    : status === "error" ? "bg-red-500"
-                    : isCurrent ? "bg-white/40"
+                    : status === "error"     ? "bg-red-500"
+                    : isCurrent            ? "bg-white/50"
                     : "bg-white/15"
                   }`}
                 />
               );
             })}
           </div>
-
           <p className="text-sm text-white/40">{answeredCount} saved</p>
         </div>
       </div>
@@ -511,37 +600,26 @@ export default function ShareYourStoryPage() {
 
         {/* Camera / Preview */}
         <div className="relative flex flex-col bg-neutral-950">
-
-          {/* Live camera with CSS filter applied, or playback preview */}
           <video
             ref={videoRef}
-            autoPlay
-            muted
-            playsInline
+            autoPlay muted playsInline
             style={{ filter: selectedFilter.css, display: previewUrl ? "none" : "block" }}
             className="h-full w-full flex-1 object-cover max-h-[45vh] lg:max-h-[calc(100vh-57px-52px)]"
           />
-
           {previewUrl && (
             <video
               src={previewUrl}
-              controls
-              autoPlay
-              playsInline
+              controls autoPlay playsInline
               style={{ filter: selectedFilter.css }}
               className="h-full w-full flex-1 object-cover max-h-[45vh] lg:max-h-[calc(100vh-57px-52px)]"
             />
           )}
-
-          {/* Recording indicator */}
           {recording && (
             <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1.5 backdrop-blur">
               <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
               <span className="text-sm tabular-nums text-white">{formatTime(seconds)}</span>
             </div>
           )}
-
-          {/* Filter picker — hidden while previewing */}
           {!previewUrl && (
             <div className="flex items-center justify-center gap-2 border-t border-white/10 bg-black/80 px-4 py-3 backdrop-blur">
               {FILTERS.map((f) => (
@@ -564,8 +642,8 @@ export default function ShareYourStoryPage() {
         {/* Controls */}
         <div className="flex flex-col justify-center gap-8 px-8 py-12 lg:px-12">
           <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-[#d28b95]">
-              Question {currentQuestion + 1}
+            <p className="text-sm uppercase tracking-[0.3em] text-red-300/70">
+              Day {dayNumber} · Question {currentQuestion + 1}
             </p>
             <h2 className="mt-4 text-3xl font-semibold leading-tight lg:text-4xl">
               {QUESTIONS[currentQuestion]}
@@ -578,7 +656,7 @@ export default function ShareYourStoryPage() {
               className="flex items-center gap-4 self-start border border-white/20 px-8 py-5 text-sm uppercase tracking-[0.3em] transition hover:bg-white hover:text-black"
             >
               <span className="h-3 w-3 rounded-full bg-red-500" />
-              Start Recording
+              Start recording
             </button>
           )}
 
@@ -588,7 +666,7 @@ export default function ShareYourStoryPage() {
               className="flex items-center gap-4 self-start border border-red-500/50 bg-red-500/10 px-8 py-5 text-sm uppercase tracking-[0.3em] text-red-400 transition hover:bg-red-500 hover:text-white"
             >
               <span className="h-3 w-3 rounded-sm bg-red-500" />
-              Stop Recording
+              Stop recording
             </button>
           )}
 
@@ -598,9 +676,8 @@ export default function ShareYourStoryPage() {
                 onClick={saveAndNext}
                 className="border border-white/20 px-8 py-5 text-sm uppercase tracking-[0.3em] transition hover:bg-white hover:text-black"
               >
-                {currentQuestion < QUESTIONS.length - 1 ? "Save & Next Question" : "Save & Finish"}
+                {currentQuestion < QUESTIONS.length - 1 ? "Save & next question" : "Save & finish"}
               </button>
-
               <button
                 onClick={reRecord}
                 className="px-8 py-4 text-sm uppercase tracking-[0.3em] text-white/40 transition hover:text-white"
@@ -612,7 +689,7 @@ export default function ShareYourStoryPage() {
 
           {Object.values(uploadStatuses).some((s) => s === "error") && (
             <p className="text-sm text-red-400">
-              One or more answers failed to upload. You can re-record them before finishing.
+              One or more answers failed to upload. You can re-record before finishing.
             </p>
           )}
         </div>

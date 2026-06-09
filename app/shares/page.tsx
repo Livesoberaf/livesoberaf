@@ -141,7 +141,7 @@ export default function SharesPage() {
             href="/share-your-story"
             className="mt-8 inline-block border border-white/20 px-8 py-5 text-sm uppercase tracking-[0.3em] transition hover:bg-white hover:text-black"
           >
-            Record Your Story
+            Share Your Day
           </a>
         </div>
 

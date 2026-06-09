@@ -6,11 +6,13 @@ import { useState } from "react";
 const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 const NAV_ITEMS = [
-  { label: "ABOUT",       href: "/about" },
-  { label: "STORIES",     href: "/shares" },
-  { label: "PODCAST",     href: "/podcast" },
-  { label: "MERCHANDISE", href: "/merch" },
-  { label: "APP",         href: "/app" },
+  { label: "ABOUT",         href: "/about" },
+  { label: "STORIES",       href: "/shares" },
+  { label: "SHARE YOUR DAY", href: "/share-your-story" },
+  { label: "PODCAST",       href: "/podcast" },
+  { label: "MERCHANDISE",   href: "/merch" },
+  { label: "APP",           href: "/app" },
+  { label: "CONTACT",       href: "/contact" },
 ];
 
 function ScrambleLink({
@@ -120,13 +122,19 @@ export default function HomePage() {
 
       </div>
 
-      {/* Get help — pinned to the bottom left */}
+      {/* Footer — GET HELP NOW + discreet Creator login */}
       <div className="relative z-20">
         <ScrambleLink
           label="GET HELP NOW"
           href="/help"
           className="text-sm sm:text-base tracking-[0.35em] text-white/60"
         />
+        <a
+          href="/sponsor/login"
+          className="mt-4 inline-block text-xs uppercase tracking-[0.25em] text-white/20 hover:text-[#ff0099] transition-colors"
+        >
+          Creator login
+        </a>
       </div>
 
     </main>
