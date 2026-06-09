@@ -8,7 +8,7 @@ const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const NAV_ITEMS = [
   { label: "ABOUT",         href: "/about" },
   { label: "STORIES",       href: "/shares" },
-  { label: "SHARE YOUR DAY", href: "/share-your-story" },
+  { label: "SHARE",           href: "/share-your-story" },
   { label: "PODCAST",       href: "/podcast" },
   { label: "MERCHANDISE",   href: "/merch" },
   { label: "APP",           href: "/app" },
