@@ -2,12 +2,27 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// 4 short present-moment questions — answered on the day, matched to others by day number
-const QUESTIONS = [
-  "How are you feeling today, honestly?",
-  "What's been hardest about today?",
-  "What's been helping you get through it?",
-  "What would you say to someone else on this exact day?",
+// Website story library — 15 deep questions.
+// appPlacement: the app feed slot this answer can be served into.
+// null ("STORY") means website library only — never served into the app.
+type Question = { text: string; appPlacement: string | null };
+
+const QUESTIONS: Question[] = [
+  { text: "Before recovery, what was life like when things were at their worst?",        appPlacement: null },
+  { text: "Looking back, what was your lowest point?",                                   appPlacement: null },
+  { text: "What finally made you decide to change?",                                     appPlacement: "early_days" },
+  { text: "What was day one like?",                                                      appPlacement: "day_1" },
+  { text: "What got you through the first week?",                                        appPlacement: "week_1" },
+  { text: "When a craving hit hard, what did you actually do to get through it?",        appPlacement: "craving" },
+  { text: "What was the hardest part of early recovery for you?",                        appPlacement: null },
+  { text: "Was there a moment you nearly gave up — and what kept you going?",            appPlacement: "low_moment" },
+  { text: "What's something you've got back that you thought you'd lost for good?",      appPlacement: null },
+  { text: "What surprised you most about getting sober?",                                appPlacement: null },
+  { text: "What's a small, ordinary thing you love about life sober now?",               appPlacement: "low_moment" },
+  { text: "What does life look like for you now?",                                       appPlacement: "milestone" },
+  { text: "How are you different now from the person you were then?",                    appPlacement: null },
+  { text: "What would you say to someone on their very first day?",                      appPlacement: "day_1" },
+  { text: "What would you say to someone who feels like giving up right now?",           appPlacement: "low_moment" },
 ];
 
 const FILTERS = [
@@ -33,7 +48,7 @@ type SavedSession = {
   savedAt: string;
 };
 
-const STORAGE_KEY = "lsaf_peer_story_session";
+const STORAGE_KEY = "lsaf_story_v3";
 
 function saveProgress(data: Record<string, unknown>) {
   try {
@@ -196,6 +211,8 @@ export default function ShareYourStoryPage() {
     const publicId = `${safe(pathway)}-day${dayNumber}-${safe(ageRange)}-${safe(sex)}-${sessionId}-q${questionIndex + 1}`;
 
     // All the metadata the matching engine will need
+    const appPlacement = QUESTIONS[questionIndex].appPlacement;
+
     const context = [
       `sessionId=${sessionId}`,
       `name=${name}`,
@@ -206,7 +223,8 @@ export default function ShareYourStoryPage() {
       `region=${region}`,
       `consent=${consent}`,
       `questionIndex=${questionIndex}`,
-      `source=peer`,
+      `appPlacement=${appPlacement ?? "story"}`,
+      `source=story`,
     ].join("|");
 
     const formData = new FormData();
@@ -239,6 +257,7 @@ export default function ShareYourStoryPage() {
               region,
               cloudinaryUrl: data.secure_url,
               consent,
+              appPlacement,
             }),
           }).catch(() => null);
 
@@ -320,13 +339,13 @@ export default function ShareYourStoryPage() {
         <section className="mx-auto max-w-2xl">
           <p className="text-sm uppercase tracking-[0.35em] text-red-300/70">LIVESOBERAF</p>
           <h1 className="mt-4 text-4xl sm:text-5xl font-semibold tracking-[0.18em] break-words">
-            CONTINUE YOUR CHECK-IN
+            CONTINUE YOUR STORY
           </h1>
           <p className="mt-8 max-w-xl text-xl leading-8 text-white/75">
             You answered {savedSession.currentQuestion} of {QUESTIONS.length} questions on {savedDate}.
           </p>
           <p className="mt-4 text-lg leading-8 text-white/60">
-            Those answers are saved. Pick up where you left off, or start again.
+            Those answers are saved. Pick up where you left off, or start again from scratch.
           </p>
           <div className="mt-12 flex flex-col gap-4 max-w-sm">
             <button
@@ -356,11 +375,11 @@ export default function ShareYourStoryPage() {
 
           <p className="text-sm uppercase tracking-[0.35em] text-red-300/70">LIVESOBERAF</p>
           <h1 className="mt-4 text-4xl sm:text-5xl font-semibold tracking-[0.18em] break-words">
-            SHARE YOUR DAY
+            SHARE YOUR STORY
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-white/60">
-            A few quick details, then four short questions about where you are today.
-            Your answers will help someone else on the same day of their recovery.
+            A few quick details, then fifteen questions about your recovery in your own words.
+            Your story will help others find themselves in yours.
           </p>
 
           <div className="mt-12 space-y-8">
@@ -510,14 +529,14 @@ export default function ShareYourStoryPage() {
         <section className="mx-auto max-w-2xl text-center">
           <p className="text-sm uppercase tracking-[0.35em] text-red-300/70">Thank you</p>
           <h1 className="mt-6 text-4xl sm:text-5xl font-semibold tracking-[0.18em]">
-            YOUR DAY {dayNumber} IS SAVED.
+            YOUR STORY IS SAVED.
           </h1>
           <p className="mt-6 text-lg leading-8 text-white/65">
             {pendingCount > 0
               ? `${pendingCount} answer${pendingCount > 1 ? "s" : ""} still uploading — keep this tab open for a moment.`
               : errorCount > 0
               ? "Most answers saved. A few had upload errors."
-              : "All four answers saved. Someone on their day " + dayNumber + " will hear you."}
+              : "All answers saved. Your story will help others find themselves in yours."}
           </p>
 
           <div className="mt-10 flex flex-wrap justify-center gap-2">
@@ -643,10 +662,10 @@ export default function ShareYourStoryPage() {
         <div className="flex flex-col justify-center gap-8 px-8 py-12 lg:px-12">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-red-300/70">
-              Day {dayNumber} · Question {currentQuestion + 1}
+              Question {currentQuestion + 1} of {QUESTIONS.length}
             </p>
             <h2 className="mt-4 text-3xl font-semibold leading-tight lg:text-4xl">
-              {QUESTIONS[currentQuestion]}
+              {QUESTIONS[currentQuestion].text}
             </h2>
           </div>
 

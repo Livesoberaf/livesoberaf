@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
-const VALID_PATHWAYS  = ["Alcohol","Cocaine","Codeine","Heroin","Gambling","Cannabis","Other"];
+const VALID_PATHWAYS     = ["Alcohol","Cocaine","Codeine","Heroin","Gambling","Cannabis","Other"];
+const VALID_PLACEMENTS   = ["early_days","day_1","week_1","craving","low_moment","milestone","story"];
 
 export async function POST(request: Request) {
   try {
@@ -16,14 +17,14 @@ export async function POST(request: Request) {
       region,
       cloudinaryUrl,
       consent,
+      appPlacement,
     } = await request.json();
 
-    // Basic validation
     if (!sessionId || questionIndex == null || !sharerName || !dayNumber ||
         !pathway || !ageRange || !sex || !region || !cloudinaryUrl) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
     }
-    if (questionIndex < 0 || questionIndex > 3) {
+    if (questionIndex < 0 || questionIndex > 14) {
       return NextResponse.json({ error: "Invalid question index." }, { status: 400 });
     }
     const day = Number(dayNumber);
@@ -37,6 +38,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Consent required." }, { status: 400 });
     }
 
+    const placement = VALID_PLACEMENTS.includes(appPlacement) ? appPlacement : "story";
+
     const { error } = await supabaseAdmin.from("peer_clips").insert({
       session_id:     sessionId,
       question_index: Number(questionIndex),
@@ -49,6 +52,7 @@ export async function POST(request: Request) {
       cloudinary_url: cloudinaryUrl,
       status:         "pending",
       consent,
+      app_placement:  placement,
     });
 
     if (error) {
