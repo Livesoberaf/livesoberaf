@@ -104,8 +104,13 @@ export async function GET() {
       ).length;
     });
 
+    const EXCLUDED_NAMES = ["andrew", "matt"];
+
     const stories = Object.values(sessions)
-      .filter((s: any) => s.consent === true)
+      .filter((s: any) =>
+        s.consent === true &&
+        !EXCLUDED_NAMES.includes(s.name.toLowerCase())
+      )
       .sort(
         (a: any, b: any) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
