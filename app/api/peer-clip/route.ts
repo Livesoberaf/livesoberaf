@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
+
+export const dynamic = "force-dynamic";
 
 const VALID_PATHWAYS     = ["Alcohol","Cocaine","Codeine","Heroin","Gambling","Cannabis","Other"];
 const VALID_PLACEMENTS   = ["early_days","day_1","week_1","craving","low_moment","milestone","story"];
@@ -40,7 +42,7 @@ export async function POST(request: Request) {
 
     const placement = VALID_PLACEMENTS.includes(appPlacement) ? appPlacement : "story";
 
-    const { error } = await supabaseAdmin.from("peer_clips").insert({
+    const { error } = await getSupabaseAdmin().from("peer_clips").insert({
       session_id:     sessionId,
       question_index: Number(questionIndex),
       sharer_name:    sharerName,

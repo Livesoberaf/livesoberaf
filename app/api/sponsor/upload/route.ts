@@ -10,6 +10,7 @@ cloudinary.config({
 });
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function uploadToCloudinary(buffer: Buffer, options: object): Promise<{ secure_url: string; public_id: string }> {
   return new Promise((resolve, reject) => {

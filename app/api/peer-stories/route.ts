@@ -1,11 +1,24 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
+
+export const dynamic = "force-dynamic";
 
 const QUESTIONS = [
-  "How are you feeling today, honestly?",
-  "What's been hardest about today?",
-  "What's been helping you get through it?",
-  "What would you say to someone else on this exact day?",
+  "Before recovery, what was life like when things were at their worst?",
+  "Looking back, what was your lowest point?",
+  "What finally made you decide to change?",
+  "What was day one like?",
+  "What got you through the first week?",
+  "When a craving hit hard, what did you actually do to get through it?",
+  "What was the hardest part of early recovery for you?",
+  "Was there a moment you nearly gave up — and what kept you going?",
+  "What's something you've got back that you thought you'd lost for good?",
+  "What surprised you most about getting sober?",
+  "What's a small, ordinary thing you love about life sober now?",
+  "What does life look like for you now?",
+  "How are you different now from the person you were then?",
+  "What would you say to someone on their very first day?",
+  "What would you say to someone who feels like giving up right now?",
 ];
 
 type PeerClipRow = {
@@ -19,10 +32,8 @@ type PeerClipRow = {
   cloudinary_url: string;
 };
 
-// Score a clip by how closely it matches the requesting user's profile.
-// Higher = closer match. Random jitter ensures variety across sessions.
 function score(clip: PeerClipRow, ageRange: string | null, sex: string | null): number {
-  let s = Math.random(); // jitter so equal-score clips vary
+  let s = Math.random();
   if (ageRange && clip.age_range === ageRange) s += 2;
   if (sex      && clip.sex       === sex)      s += 1;
   return s;
@@ -31,29 +42,33 @@ function score(clip: PeerClipRow, ageRange: string | null, sex: string | null): 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
 
-  const day      = Number(searchParams.get("day"));
-  const pathway  = searchParams.get("pathway");
-  const ageRange = searchParams.get("ageRange");
-  const sex      = searchParams.get("sex");
+  const day        = Number(searchParams.get("day"));
+  const pathway    = searchParams.get("pathway");
+  const ageRange   = searchParams.get("ageRange");
+  const sex        = searchParams.get("sex");
+  const placement  = searchParams.get("placement"); // optional: filter by app_placement
 
   if (!day || day < 1 || !pathway) {
     return NextResponse.json({ clips: [] });
   }
 
   try {
-    const { data, error } = await supabaseAdmin
+    let query = getSupabaseAdmin()
       .from("peer_clips")
       .select("id, question_index, sharer_name, day_number, age_range, sex, region, cloudinary_url")
-      .eq("day_number",  day)
-      .eq("pathway",     pathway)
-      .eq("status",      "approved")
-      .eq("consent",     true);
+      .eq("day_number", day)
+      .eq("pathway",    pathway)
+      .eq("status",     "approved")
+      .eq("consent",    true);
+
+    if (placement) query = query.eq("app_placement", placement);
+
+    const { data, error } = await query;
 
     if (error || !data || data.length === 0) {
       return NextResponse.json({ clips: [] });
     }
 
-    // Group by question, then pick the best-matched clip per question
     const byQuestion = new Map<number, PeerClipRow[]>();
     for (const clip of data as PeerClipRow[]) {
       const list = byQuestion.get(clip.question_index) ?? [];
@@ -65,14 +80,11 @@ export async function GET(request: Request) {
     for (let i = 0; i < QUESTIONS.length; i++) {
       const options = byQuestion.get(i);
       if (!options?.length) continue;
-
-      // Sort by demographic match score, take the top clip
       const best = options.sort((a, b) => score(b, ageRange, sex) - score(a, ageRange, sex))[0];
-
       selected.push({
         id:            best.id,
         questionIndex: best.question_index,
-        question:      QUESTIONS[best.question_index],
+        question:      QUESTIONS[best.question_index] ?? "",
         sharerName:    best.sharer_name,
         dayNumber:     best.day_number,
         videoUrl:      best.cloudinary_url,
@@ -80,7 +92,6 @@ export async function GET(request: Request) {
     }
 
     const response = NextResponse.json({ clips: selected });
-    // Cache 5 minutes at the CDN — each unique day+pathway+ageRange+sex URL is cached separately
     response.headers.set("Cache-Control", "public, max-age=300, stale-while-revalidate=60");
     return response;
 

@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const { id } = await request.json();
   if (!id) return NextResponse.json({ error: "Missing clip ID." }, { status: 400 });
 
-  const { error } = await supabaseAdmin
+  const { error } = await getSupabaseAdmin()
     .from("peer_clips")
     .update({ status: "rejected" })
     .eq("id", id);

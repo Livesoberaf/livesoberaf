@@ -1,7 +1,9 @@
 import { ALCOHOL_CONTENT } from "@/lib/sponsor-content";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import AdminClipList from "./AdminClipList";
 import PeerClipQueue from "./PeerClipQueue";
+
+export const dynamic = "force-dynamic";
 
 // ── Creator clips (Cloudinary) ────────────────────────────────────────────────
 
@@ -76,7 +78,7 @@ type PeerSession = {
 
 async function getPendingPeerSessions(): Promise<PeerSession[]> {
   try {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from("peer_clips")
       .select("*")
       .in("status", ["pending"])
