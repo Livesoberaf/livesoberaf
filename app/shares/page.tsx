@@ -94,18 +94,37 @@ type Story = {
   answers: Record<string, string>;
 };
 
+type PeerStory = {
+  sessionId: string;
+  sharerName: string;
+  pathway: string;
+  dayNumber: number;
+  ageRange: string;
+  sex: string;
+  region: string;
+  firstVideoUrl: string;
+  firstQuestion: string;
+  answerCount: number;
+};
+
 export default function SharesPage() {
-  const [stories, setStories] = useState<Story[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [stories, setStories]         = useState<Story[]>([]);
+  const [peerStories, setPeerStories] = useState<PeerStory[]>([]);
+  const [loading, setLoading]         = useState(true);
 
   useEffect(() => {
     async function loadStories() {
       try {
-        const response = await fetch("/api/published-stories");
-        const data = await response.json();
-        if (data.success) setStories(data.stories);
+        const [archiveRes, peerRes] = await Promise.all([
+          fetch("/api/published-stories"),
+          fetch("/api/community-stories"),
+        ]);
+        const archiveData = await archiveRes.json();
+        const peerData    = await peerRes.json();
+        if (archiveData.success) setStories(archiveData.stories);
+        if (peerData.stories)    setPeerStories(peerData.stories);
       } catch {
-        // community stories unavailable — foundation stories still show
+        // fall through — foundation stories always show
       } finally {
         setLoading(false);
       }
@@ -258,6 +277,56 @@ export default function SharesPage() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Community stories — approved peer clips from Supabase */}
+        {!loading && peerStories.length > 0 && (
+          <div className="mt-20">
+            <div className="mb-6 flex items-center gap-4">
+              <h2 className="text-xs uppercase tracking-[0.3em] text-white/40">Community Stories</h2>
+              <div className="h-px flex-1 bg-white/10" />
+            </div>
+
+            <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+              {peerStories.map((story) => (
+                <div
+                  key={story.sessionId}
+                  className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/5"
+                >
+                  <div className="p-4">
+                    <p className="mb-3 text-xs uppercase tracking-[0.2em] text-[#d28b95]">
+                      {story.pathway} · Day {story.dayNumber}
+                    </p>
+
+                    <h3 className="mb-4 text-xl font-semibold leading-tight">
+                      {story.firstQuestion}
+                    </h3>
+
+                    <video
+                      src={story.firstVideoUrl}
+                      poster={cloudinaryPoster(story.firstVideoUrl)}
+                      controls
+                      playsInline
+                      preload="none"
+                      className="aspect-[4/5] w-full rounded-[1.5rem] bg-black object-cover"
+                    />
+                  </div>
+
+                  <div className="space-y-3 p-6">
+                    <p className="text-xs uppercase tracking-[0.25em] text-white/40">
+                      {story.sharerName}
+                      {story.ageRange ? ` · ${story.ageRange}` : ""}
+                      {story.region   ? ` · ${story.region}`   : ""}
+                    </p>
+
+                    <p className="text-white/70">
+                      {story.answerCount} question{story.answerCount !== 1 ? "s" : ""} answered
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
