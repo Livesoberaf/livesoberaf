@@ -45,46 +45,44 @@ export async function GET() {
 
     if (error || !data) return NextResponse.json({ stories: [] });
 
-    // Group clips by session; track the clip with the lowest question_index
-    // as the lead video for each story card.
     type Session = {
       sessionId: string; sharerName: string; pathway: string;
       dayNumber: number; ageRange: string; sex: string; region: string;
-      firstVideoUrl: string; firstQuestion: string;
-      answerCount: number; createdAt: string; minQIndex: number;
+      createdAt: string;
+      clips: { videoUrl: string; question: string; questionIndex: number }[];
     };
 
     const map = new Map<string, Session>();
 
     for (const row of data as Row[]) {
-      const s = map.get(row.session_id);
+      let s = map.get(row.session_id);
       if (!s) {
-        map.set(row.session_id, {
-          sessionId:     row.session_id,
-          sharerName:    row.sharer_name,
-          pathway:       row.pathway,
-          dayNumber:     row.day_number,
-          ageRange:      row.age_range,
-          sex:           row.sex,
-          region:        row.region,
-          firstVideoUrl: row.cloudinary_url,
-          firstQuestion: QUESTIONS[row.question_index] ?? "",
-          answerCount:   1,
-          createdAt:     row.created_at,
-          minQIndex:     row.question_index,
-        });
-      } else {
-        s.answerCount++;
-        if (row.question_index < s.minQIndex) {
-          s.minQIndex     = row.question_index;
-          s.firstVideoUrl = row.cloudinary_url;
-          s.firstQuestion = QUESTIONS[row.question_index] ?? "";
-        }
+        s = {
+          sessionId: row.session_id,
+          sharerName: row.sharer_name,
+          pathway:    row.pathway,
+          dayNumber:  row.day_number,
+          ageRange:   row.age_range,
+          sex:        row.sex,
+          region:     row.region,
+          createdAt:  row.created_at,
+          clips:      [],
+        };
+        map.set(row.session_id, s);
       }
+      s.clips.push({
+        videoUrl:      row.cloudinary_url,
+        question:      QUESTIONS[row.question_index] ?? "",
+        questionIndex: row.question_index,
+      });
     }
 
-    // Strip internal minQIndex before returning
-    const stories = Array.from(map.values()).map(({ minQIndex: _q, ...rest }) => rest);
+    // Sort each session's clips by question order
+    const stories = Array.from(map.values()).map((s) => ({
+      ...s,
+      clips: s.clips.sort((a, b) => a.questionIndex - b.questionIndex),
+    }));
+
     return NextResponse.json({ stories });
   } catch {
     return NextResponse.json({ stories: [] });

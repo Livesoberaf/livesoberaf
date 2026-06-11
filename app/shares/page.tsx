@@ -94,6 +94,12 @@ type Story = {
   answers: Record<string, string>;
 };
 
+type PeerClip = {
+  videoUrl: string;
+  question: string;
+  questionIndex: number;
+};
+
 type PeerStory = {
   sessionId: string;
   sharerName: string;
@@ -102,10 +108,72 @@ type PeerStory = {
   ageRange: string;
   sex: string;
   region: string;
-  firstVideoUrl: string;
-  firstQuestion: string;
-  answerCount: number;
+  clips: PeerClip[];
 };
+
+function CommunityStoryCard({ story }: { story: PeerStory }) {
+  const [idx, setIdx] = useState(0);
+  const clip = story.clips[idx];
+  if (!clip) return null;
+
+  return (
+    <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/5">
+      <div className="p-4">
+        <p className="mb-3 text-xs uppercase tracking-[0.2em] text-[#d28b95]">
+          {story.pathway} · Day {story.dayNumber}
+        </p>
+
+        <h3 className="mb-4 text-xl font-semibold leading-tight">
+          {clip.question}
+        </h3>
+
+        {/* key forces video element to reload when clip changes */}
+        <video
+          key={clip.videoUrl}
+          src={clip.videoUrl}
+          poster={cloudinaryPoster(clip.videoUrl)}
+          controls
+          playsInline
+          preload="none"
+          className="aspect-[4/5] w-full rounded-[1.5rem] bg-black object-cover"
+        />
+      </div>
+
+      <div className="space-y-3 p-6">
+        <p className="text-xs uppercase tracking-[0.25em] text-white/40">
+          {story.sharerName}
+          {story.ageRange ? ` · ${story.ageRange}` : ""}
+          {story.region   ? ` · ${story.region}`   : ""}
+        </p>
+
+        {/* Prev / Next — only shown when there are multiple clips */}
+        {story.clips.length > 1 && (
+          <div className="flex items-center justify-between pt-2">
+            <button
+              onClick={() => setIdx((i) => Math.max(0, i - 1))}
+              disabled={idx === 0}
+              className="text-xs uppercase tracking-[0.25em] text-white/40 hover:text-white disabled:opacity-20 transition-colors"
+            >
+              ← Prev
+            </button>
+
+            <span className="text-xs text-white/30">
+              {idx + 1} of {story.clips.length}
+            </span>
+
+            <button
+              onClick={() => setIdx((i) => Math.min(story.clips.length - 1, i + 1))}
+              disabled={idx === story.clips.length - 1}
+              className="text-xs uppercase tracking-[0.25em] text-white/40 hover:text-white disabled:opacity-20 transition-colors"
+            >
+              Next →
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function SharesPage() {
   const [stories, setStories]         = useState<Story[]>([]);
@@ -291,41 +359,7 @@ export default function SharesPage() {
 
             <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
               {peerStories.map((story) => (
-                <div
-                  key={story.sessionId}
-                  className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/5"
-                >
-                  <div className="p-4">
-                    <p className="mb-3 text-xs uppercase tracking-[0.2em] text-[#d28b95]">
-                      {story.pathway} · Day {story.dayNumber}
-                    </p>
-
-                    <h3 className="mb-4 text-xl font-semibold leading-tight">
-                      {story.firstQuestion}
-                    </h3>
-
-                    <video
-                      src={story.firstVideoUrl}
-                      poster={cloudinaryPoster(story.firstVideoUrl)}
-                      controls
-                      playsInline
-                      preload="none"
-                      className="aspect-[4/5] w-full rounded-[1.5rem] bg-black object-cover"
-                    />
-                  </div>
-
-                  <div className="space-y-3 p-6">
-                    <p className="text-xs uppercase tracking-[0.25em] text-white/40">
-                      {story.sharerName}
-                      {story.ageRange ? ` · ${story.ageRange}` : ""}
-                      {story.region   ? ` · ${story.region}`   : ""}
-                    </p>
-
-                    <p className="text-white/70">
-                      {story.answerCount} question{story.answerCount !== 1 ? "s" : ""} answered
-                    </p>
-                  </div>
-                </div>
+                <CommunityStoryCard key={story.sessionId} story={story} />
               ))}
             </div>
           </div>
