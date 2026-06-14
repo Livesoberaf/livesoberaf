@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   const { data, error } = await getSupabaseAdmin()
     .from("creators")
     .insert({ name, pathway, region, sex, age_range: age_range ?? "", access_code })
-    .select("id, name")
+    .select("id, name, pathway, region, sex, age_range, access_code, created_at")
     .single();
 
   if (error) {

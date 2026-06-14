@@ -43,9 +43,9 @@ export default function CreatorManager({ creators: initial }: { creators: Creato
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Failed."); return; }
+      setCreators((c) => [...c, data.creator]);
       setAdding(false);
       setForm({ name: "", pathway: "alcohol", region: "UK", sex: "male", age_range: "", access_code: "" });
-      router.refresh();
     } catch {
       setError("Something went wrong.");
     } finally {
