@@ -4,14 +4,12 @@ import type { NextRequest } from "next/server";
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Sponsor protection
+  // Sponsor/creator protection
   if (pathname.startsWith("/sponsor")) {
     if (pathname === "/sponsor/login") return NextResponse.next();
 
-    const token  = request.cookies.get("sponsor_token")?.value;
-    const secret = process.env.SPONSOR_SECRET;
-
-    if (!token || !secret || token !== secret) {
+    const creatorId = request.cookies.get("creator_id")?.value;
+    if (!creatorId) {
       return NextResponse.redirect(new URL("/sponsor/login", request.url));
     }
     return NextResponse.next();
