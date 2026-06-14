@@ -3,6 +3,7 @@ export type ContentSlot = {
   timeLabel: string;
   title: string;
   duration: string;
+  prompt?: string;   // short "what to say" line shown under the title in the studio
   context: string;
   talkingPoints: string[];
 };
@@ -16,6 +17,112 @@ export type ContentStage = {
 };
 
 export const ALCOHOL_CONTENT: ContentStage[] = [
+  {
+    id: "day1",
+    label: "Day 1",
+    days: "First 24 hours",
+    order: 0,
+    slots: [
+      {
+        id: "day1-morning",
+        timeLabel: "Morning",
+        title: "The first morning",
+        duration: "2–4 min",
+        prompt: "Tell them they only have to stay sober until lunchtime. Not forever, not next week — just reach lunch.",
+        context: "They woke up this morning and didn't drink. They may be shaky, scared, and can't imagine a sober life. The goal right now is not forever — it's the next few hours.",
+        talkingPoints: [
+          "Make the goal tiny: just get to lunch. Not forever, not next week — just lunchtime.",
+          "What YOUR first morning felt like — the honesty matters more than anything polished",
+          "One practical thing to do right now: drink water, eat something small, step outside for a minute",
+          "They don't have to solve recovery today. Today is just about getting to lunchtime.",
+        ],
+      },
+      {
+        id: "day1-mid-morning",
+        timeLabel: "Mid-morning",
+        title: "What you're feeling is normal",
+        duration: "1–3 min",
+        prompt: "Name the physical stuff — shakes, sweating, anxiety, restlessness — and tell them it's the body adjusting, not them failing.",
+        context: "Physical symptoms are peaking in the mid-morning of Day 1. They may think something is wrong with them specifically — that they're unusually weak or broken.",
+        talkingPoints: [
+          "Name exactly what they might be feeling: shaking, sweating, anxiety, restlessness, nausea — all of it",
+          "This is the body adjusting, not them failing. It's chemistry, not weakness.",
+          "When did YOUR physical symptoms start to ease? Give them a realistic timeframe.",
+          "The body is already starting to heal — even now, even this morning",
+        ],
+      },
+      {
+        id: "day1-lunch",
+        timeLabel: "Lunch",
+        title: "Eat something, drink water",
+        duration: "1–2 min",
+        prompt: "Keep it practical: a sandwich, a banana, some water. Say how much a small thing shifts how you feel.",
+        context: "They made it to lunch. This is the first small win of Day 1. Blood sugar is low, they may not feel hungry — practical, warm, and brief is what they need.",
+        talkingPoints: [
+          "They made it to lunch. That's the first thing you said you'd do — and they did it.",
+          "Eat something small even if they don't want to — a sandwich, a banana, anything",
+          "Drink water. Dehydration makes everything harder and the body needs it right now.",
+          "How much a small meal shifted things for you in early recovery — be specific",
+        ],
+      },
+      {
+        id: "day1-afternoon",
+        timeLabel: "Afternoon",
+        title: "Don't trust every thought",
+        duration: "2–3 min",
+        prompt: "Warn them about 'one won't hurt' — that's the addiction talking, not the truth, and the thought passes.",
+        context: "The afternoon of Day 1 is when bargaining thoughts hit hardest. The mind starts looking for exits: 'one won't hurt', 'I'll start properly tomorrow'. They need to be warned.",
+        talkingPoints: [
+          "The thought 'one won't hurt' will probably come today — warn them it's coming",
+          "That thought is the addiction talking, not the truth. It's not their voice.",
+          "These thoughts pass — they don't have to act on every one. What did you say to yourself when they came?",
+          "The thought isn't a sign they're failing. It's a sign the addiction is losing.",
+        ],
+      },
+      {
+        id: "day1-late-afternoon",
+        timeLabel: "Late afternoon",
+        title: "Reach out before you need to",
+        duration: "1–3 min",
+        prompt: "Push them to message someone or get to a meeting before the urge peaks. Isolation is where it wins.",
+        context: "Late afternoon is when people start isolating — before the high-risk evening. The urge to be alone is strong and it makes the evening harder. Connection is the intervention.",
+        talkingPoints: [
+          "Now — before the urge gets loud — is the time to reach out. Not when it's already peaked.",
+          "Who is one person they could message right now? Push them to do it.",
+          "A meeting, a phone call, even a text — anything that breaks the isolation",
+          "Isolation is where the urge wins. Connection is where it doesn't.",
+        ],
+      },
+      {
+        id: "day1-evening",
+        timeLabel: "Evening",
+        title: "When the craving hits tonight",
+        duration: "1–3 min",
+        prompt: "Tell them it'll pass whether they drink or not — it rises, peaks, fades. They only have to ride out this one.",
+        context: "Evening is the highest-risk hour of Day 1 — when drinking was habitual. They need to know that cravings are time-limited, and that all they have to do is outlast this one.",
+        talkingPoints: [
+          "The craving will rise. It will peak. It will fade. Whether they drink or not — it passes.",
+          "They don't have to fight it — they just have to outlast it. 20–30 minutes is usually the peak.",
+          "What you did on your first evening to get through — practical and specific",
+          "Just tonight. They don't have to think about tomorrow night. Just this one.",
+        ],
+      },
+      {
+        id: "day1-before-bed",
+        timeLabel: "Before bed",
+        title: "You made it through Day One",
+        duration: "2–3 min",
+        prompt: "Close gently: there's nothing wrong with them, they're not weak or broken, and they did the hardest day. Be proud.",
+        context: "They made it through Day 1. This is the hardest day most people in recovery will ever have. They need to hear that — warmly, honestly, from someone who's been there.",
+        talkingPoints: [
+          "They did it. Day 1 is done. That is not small — say it like you mean it.",
+          "There is nothing wrong with them. They are not weak. They are not broken.",
+          "Day 1 is statistically the hardest day. It does not get harder than today.",
+          "Close with something warm and personal — what you'd want to hear at the end of your Day 1",
+        ],
+      },
+    ],
+  },
   {
     id: "d1-3",
     label: "Days 1–3",

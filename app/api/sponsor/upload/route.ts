@@ -29,6 +29,7 @@ function uploadToCloudinary(
 
 // Map slot stage to app_placement and a representative sober day for range matching
 function slotMeta(slotId: string): { app_placement: string; day_number: number } {
+  if (slotId.startsWith("day1"))   return { app_placement: "day_1",      day_number: 1  };
   if (slotId.includes("craving"))  return { app_placement: "craving",    day_number: 5  };
   if (slotId.includes("sleep"))    return { app_placement: "low_moment", day_number: 10 };
   if (slotId.startsWith("d1-3"))   return { app_placement: "early_days", day_number: 2  };

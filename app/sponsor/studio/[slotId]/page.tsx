@@ -5,6 +5,13 @@ import UploadForm from "../UploadForm";
 
 // A short note about who watches this specific clip and why it matters
 const IMPACT_NOTES: Record<string, string> = {
+  "day1-morning":       "They woke up this morning and didn't drink. They're scared and shaking and they don't know if they can do this. You're the first voice they hear.",
+  "day1-mid-morning":   "Physical symptoms are peaking right now. They may think something is wrong with them specifically. Your job is to name it and normalise it.",
+  "day1-lunch":         "They made it to lunch — the first small promise they kept today. They need to hear that it counts.",
+  "day1-afternoon":     "Bargaining thoughts are hitting hard. 'One won't hurt.' 'I'll start tomorrow.' They need to be warned before those thoughts win.",
+  "day1-late-afternoon":"Before the evening gets hard, they need to reach out. This clip is the push that gets them to do it.",
+  "day1-evening":       "The highest-risk hour of the hardest day. They need to know the craving will pass — and that all they have to do is outlast this one.",
+  "day1-before-bed":    "They made it through Day 1. No one who watches this clip has had a harder day than today. Tell them that.",
   "d1-3-morning":    "Someone who woke up sober for one of the first times. They're shaking. They need to hear a human voice that has been here.",
   "d1-3-afternoon":  "Peak withdrawal. The urge is loudest right now. Your words are what stands between them and giving up.",
   "d1-3-evening":    "The hardest hour of the hardest days. Getting them to tomorrow morning is everything.",
@@ -80,7 +87,15 @@ export default async function StudioPage({ params }: { params: Promise<{ slotId:
         <h1 className="text-4xl sm:text-5xl font-semibold tracking-[0.15em] uppercase mb-5">
           {slot.title}
         </h1>
-        <p className="text-white/40 text-sm uppercase tracking-[0.2em] mb-20">{slot.duration}</p>
+        <p className="text-white/40 text-sm uppercase tracking-[0.2em] mb-10">{slot.duration}</p>
+
+        {/* What to say — the core message, shown prominently when a prompt exists */}
+        {slot.prompt && (
+          <div className="mb-20">
+            <p className="text-xs uppercase tracking-[0.3em] text-white/30 mb-4">What to say</p>
+            <p className="text-2xl leading-9 text-white/90">&ldquo;{slot.prompt}&rdquo;</p>
+          </div>
+        )}
 
         {/* Who watches this + context — merged into one section */}
         <section>
