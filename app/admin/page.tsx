@@ -2,6 +2,7 @@ import { ALCOHOL_CONTENT } from "@/lib/sponsor-content";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import AdminClipList from "./AdminClipList";
 import PeerClipQueue from "./PeerClipQueue";
+import CreatorManager from "./CreatorManager";
 
 export const dynamic = "force-dynamic";
 
@@ -113,10 +114,23 @@ async function getPendingPeerSessions(): Promise<PeerSession[]> {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+async function getCreators() {
+  try {
+    const { data } = await getSupabaseAdmin()
+      .from("creators")
+      .select("id, name, pathway, region, sex, age_range, access_code, created_at")
+      .order("created_at", { ascending: true });
+    return data ?? [];
+  } catch {
+    return [];
+  }
+}
+
 export default async function AdminDashboard() {
-  const [uploaded, peerSessions] = await Promise.all([
+  const [uploaded, peerSessions, creators] = await Promise.all([
     getCreatorClips(),
     getPendingPeerSessions(),
+    getCreators(),
   ]);
 
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME ?? "";
@@ -153,8 +167,14 @@ export default async function AdminDashboard() {
           ADMIN
         </h1>
 
-        {/* Peer story moderation — safety-critical, shown first */}
+        {/* Creator management */}
         <section className="mt-20">
+          <h2 className="text-3xl font-semibold tracking-[0.15em]">CREATORS</h2>
+          <CreatorManager creators={creators} />
+        </section>
+
+        {/* Peer story moderation — safety-critical */}
+        <section className="mt-24">
           <h2 className="text-3xl font-semibold tracking-[0.15em]">
             PEER STORIES
           </h2>

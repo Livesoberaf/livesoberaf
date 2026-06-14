@@ -32,10 +32,16 @@ type PeerClipRow = {
   cloudinary_url: string;
 };
 
-function score(clip: PeerClipRow, ageRange: string | null, sex: string | null): number {
+function score(
+  clip: PeerClipRow,
+  ageRange: string | null,
+  sex: string | null,
+  region: string | null,
+): number {
   let s = Math.random();
   if (ageRange && clip.age_range === ageRange) s += 2;
-  if (sex      && clip.sex       === sex)      s += 1;
+  if (sex      && clip.sex       === sex)      s += 1.5;
+  if (region   && clip.region    === region)   s += 1;
   return s;
 }
 
@@ -46,6 +52,7 @@ export async function GET(request: Request) {
   const pathway    = searchParams.get("pathway");
   const ageRange   = searchParams.get("ageRange");
   const sex        = searchParams.get("sex");
+  const region     = searchParams.get("region");
   const placement  = searchParams.get("placement"); // optional: filter by app_placement
 
   if (!day || day < 1 || !pathway) {
@@ -80,7 +87,7 @@ export async function GET(request: Request) {
     for (let i = 0; i < QUESTIONS.length; i++) {
       const options = byQuestion.get(i);
       if (!options?.length) continue;
-      const best = options.sort((a, b) => score(b, ageRange, sex) - score(a, ageRange, sex))[0];
+      const best = options.sort((a, b) => score(b, ageRange, sex, region) - score(a, ageRange, sex, region))[0];
       selected.push({
         id:            best.id,
         questionIndex: best.question_index,
