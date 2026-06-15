@@ -80,9 +80,10 @@ export function momentLabel(moment: string | null): string {
 
 export function moodLabel(mood: string | null): string {
   const MAP: Record<string, string> = {
-    struggling: "When struggling",
-    okay:       "When okay",
-    good:       "When doing well",
+    anxious:   "When anxious",
+    triggered: "When triggered",
+    flat:      "When flat",
+    hopeful:   "When hopeful",
   };
   return mood ? (MAP[mood] ?? mood) : "";
 }
