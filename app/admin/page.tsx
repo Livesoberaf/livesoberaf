@@ -3,7 +3,6 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import AdminClipList from "./AdminClipList";
 import PeerClipQueue from "./PeerClipQueue";
 import CreatorManager from "./CreatorManager";
-import PromptsList from "./PromptsList";
 
 export const dynamic = "force-dynamic";
 
@@ -168,17 +167,8 @@ export default async function AdminDashboard() {
           ADMIN
         </h1>
 
-        {/* Prompts catalog */}
-        <section className="mt-20">
-          <h2 className="text-3xl font-semibold tracking-[0.15em]">PROMPTS</h2>
-          <p className="mt-4 text-white/50 text-sm">
-            The brief catalog. Add prompts via the Supabase SQL editor or POST /api/admin/prompt.
-          </p>
-          <PromptsList />
-        </section>
-
         {/* Creator management */}
-        <section className="mt-24">
+        <section className="mt-20">
           <h2 className="text-3xl font-semibold tracking-[0.15em]">CREATORS</h2>
           <CreatorManager creators={creators} />
         </section>
