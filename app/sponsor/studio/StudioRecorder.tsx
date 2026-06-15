@@ -5,7 +5,8 @@ import { useEffect, useRef, useState } from "react";
 type RecorderState = "camera-off" | "camera-on" | "recording" | "preview" | "uploading" | "done";
 
 type Props = {
-  slotId: string;
+  slotId?: string;
+  promptId?: string;
   onDone: () => void;
 };
 
@@ -20,7 +21,7 @@ function getBestMimeType() {
   return types.find((t) => MediaRecorder.isTypeSupported(t)) ?? "";
 }
 
-export default function StudioRecorder({ slotId, onDone }: Props) {
+export default function StudioRecorder({ slotId, promptId, onDone }: Props) {
   const videoRef    = useRef<HTMLVideoElement>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef   = useRef<Blob[]>([]);
@@ -111,10 +112,12 @@ export default function StudioRecorder({ slotId, onDone }: Props) {
     }, 300);
 
     try {
-      const file     = new File([recordedBlob], `${slotId}.webm`, { type: recordedBlob.type });
+      const key      = promptId ?? slotId ?? "clip";
+      const file     = new File([recordedBlob], `${key}.webm`, { type: recordedBlob.type });
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("slotId", slotId);
+      if (slotId)   formData.append("slotId",   slotId);
+      if (promptId) formData.append("promptId", promptId);
 
       const res = await fetch("/api/sponsor/upload", { method: "POST", body: formData });
       clearInterval(progressInterval);

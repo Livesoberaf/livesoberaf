@@ -4,13 +4,14 @@ import { useState, useRef } from "react";
 import StudioRecorder from "./StudioRecorder";
 
 type Props = {
-  slotId: string;
+  slotId?: string;
+  promptId?: string;
   alreadyUploaded: boolean;
 };
 
 type Tab = "record" | "upload";
 
-export default function UploadForm({ slotId, alreadyUploaded }: Props) {
+export default function UploadForm({ slotId, promptId, alreadyUploaded }: Props) {
   const [tab, setTab] = useState<Tab>("record");
   const [uploaded, setUploaded] = useState(alreadyUploaded);
 
@@ -39,7 +40,8 @@ export default function UploadForm({ slotId, alreadyUploaded }: Props) {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("slotId", slotId);
+      if (slotId)   formData.append("slotId",   slotId);
+      if (promptId) formData.append("promptId", promptId);
 
       const res = await fetch("/api/sponsor/upload", { method: "POST", body: formData });
       clearInterval(progressInterval);
@@ -99,7 +101,7 @@ export default function UploadForm({ slotId, alreadyUploaded }: Props) {
 
       {/* Record tab */}
       {tab === "record" && (
-        <StudioRecorder slotId={slotId} onDone={() => setUploaded(true)} />
+        <StudioRecorder slotId={slotId} promptId={promptId} onDone={() => setUploaded(true)} />
       )}
 
       {/* Upload tab */}

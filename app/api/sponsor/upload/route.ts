@@ -27,7 +27,7 @@ function uploadToCloudinary(
   });
 }
 
-// Map slot stage to app_placement and a representative sober day for range matching
+// Map legacy slot stage to app_placement and a representative sober day
 function slotMeta(slotId: string): { app_placement: string; day_number: number } {
   if (slotId.startsWith("day1"))   return { app_placement: "day_1",      day_number: 1  };
   if (slotId.includes("craving"))  return { app_placement: "craving",    day_number: 5  };
@@ -44,33 +44,109 @@ function slotMeta(slotId: string): { app_placement: string; day_number: number }
 
 export async function POST(request: Request) {
   try {
-    // Identify the creator from their session cookie
     const cookieStore = await cookies();
     const creatorId   = cookieStore.get("creator_id")?.value;
-
     if (!creatorId) {
       return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
     }
 
     const { data: creator, error: creatorError } = await getSupabaseAdmin()
       .from("creators")
-      .select("id, name, pathway, region, sex, age_range")
+      .select("id, name, pathway, region, sex, age_range, role")
       .eq("id", creatorId)
       .single();
-
     if (creatorError || !creator) {
       return NextResponse.json({ error: "Creator not found." }, { status: 401 });
     }
 
     const formData = await request.formData();
-    const file     = formData.get("file") as File | null;
-    const slotId   = formData.get("slotId") as string | null;
+    const file     = formData.get("file")     as File   | null;
+    const slotId   = formData.get("slotId")   as string | null;
+    const promptId = formData.get("promptId") as string | null;
 
-    if (!file || !slotId) {
-      return NextResponse.json({ error: "Missing file or slot ID." }, { status: 400 });
+    if (!file || (!slotId && !promptId)) {
+      return NextResponse.json({ error: "Missing file or slot/prompt ID." }, { status: 400 });
     }
 
-    if (!ALL_SLOT_IDS.includes(slotId)) {
+    // ── Prompt-driven path ──────────────────────────────────────────────────
+    if (promptId) {
+      const { data: prompt } = await getSupabaseAdmin()
+        .from("prompts")
+        .select("id, role, trigger_type, day_number, moment, mood, event, pathway, title")
+        .eq("id", promptId)
+        .single();
+
+      if (!prompt) {
+        return NextResponse.json({ error: "Prompt not found." }, { status: 404 });
+      }
+
+      const bytes  = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      const contributorRole = creator.role as string;
+      const folder = `livesoberaf/${contributorRole}/${prompt.pathway ?? "universal"}`;
+
+      const result = await uploadToCloudinary(buffer, {
+        resource_type: "video",
+        folder,
+        public_id:  `${promptId}`,
+        overwrite:  true,
+        context: {
+          promptId,
+          creatorId:   creator.id,
+          creatorName: creator.name,
+          pathway:     prompt.pathway ?? "universal",
+          uploadedAt:  new Date().toISOString(),
+        },
+      });
+
+      const sessionId = `prompt-${creator.id}-${promptId}`;
+
+      // Matt's clips are universal — no pathway/region/sex
+      const isMatt = contributorRole === "matt";
+
+      const { data: existing } = await getSupabaseAdmin()
+        .from("peer_clips")
+        .select("id")
+        .eq("session_id", sessionId)
+        .maybeSingle();
+
+      if (existing) {
+        await getSupabaseAdmin()
+          .from("peer_clips")
+          .update({ cloudinary_url: result.secure_url, status: "pending" })
+          .eq("session_id", sessionId);
+      } else {
+        await getSupabaseAdmin()
+          .from("peer_clips")
+          .insert({
+            session_id:     sessionId,
+            question_index: 0,
+            sharer_name:    creator.name,
+            day_number:     prompt.day_number ?? 0,
+            pathway:        isMatt ? null  : (prompt.pathway ?? creator.pathway),
+            age_range:      isMatt ? ""    : creator.age_range,
+            sex:            isMatt ? ""    : creator.sex,
+            region:         isMatt ? ""    : creator.region,
+            cloudinary_url: result.secure_url,
+            status:         "pending",
+            consent:        true,
+            app_placement:  prompt.trigger_type === "mood"  ? "mood_response"
+                          : prompt.trigger_type === "event" ? (prompt.event ?? "story")
+                          : "day_1",
+            prompt_id:      prompt.id,
+            role:           contributorRole,
+            moment:         prompt.moment,
+            mood:           prompt.mood,
+            event:          prompt.event,
+          });
+      }
+
+      return NextResponse.json({ success: true, videoUrl: result.secure_url });
+    }
+
+    // ── Legacy slot path (unchanged) ────────────────────────────────────────
+    if (!ALL_SLOT_IDS.includes(slotId!)) {
       return NextResponse.json({ error: "Unknown slot ID." }, { status: 400 });
     }
 
@@ -91,12 +167,9 @@ export async function POST(request: Request) {
       },
     });
 
-    // Write to Supabase peer_clips so the clip flows through admin approval
-    // and the app can serve it once approved.
-    const { app_placement, day_number } = slotMeta(slotId);
+    const { app_placement, day_number } = slotMeta(slotId!);
     const sessionId = `studio-${creator.id}-${slotId}`;
 
-    // Upsert by session_id so a retake replaces the pending record rather than duplicating
     const { data: existing } = await getSupabaseAdmin()
       .from("peer_clips")
       .select("id")
@@ -106,10 +179,7 @@ export async function POST(request: Request) {
     if (existing) {
       await getSupabaseAdmin()
         .from("peer_clips")
-        .update({
-          cloudinary_url: result.secure_url,
-          status:         "pending",
-        })
+        .update({ cloudinary_url: result.secure_url, status: "pending" })
         .eq("session_id", sessionId);
     } else {
       await getSupabaseAdmin()
@@ -127,6 +197,7 @@ export async function POST(request: Request) {
           status:         "pending",
           consent:        true,
           app_placement,
+          role:           "creator",
         });
     }
 
