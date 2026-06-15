@@ -236,9 +236,6 @@ export default function StudioRecorder({ slotId, promptId, onDone }: Props) {
             </button>
           </>
         )}
-        {uploadError && (
-          <p className="text-red-300/70 text-sm w-full">{uploadError}</p>
-        )}
 
         {state === "uploading" && (
           <div className="flex-1 flex flex-col gap-3">
@@ -252,6 +249,13 @@ export default function StudioRecorder({ slotId, promptId, onDone }: Props) {
           </div>
         )}
       </div>
+
+      {uploadError && (
+        <div className="rounded-lg border border-red-300/30 bg-red-300/10 px-5 py-4 mt-4">
+          <p className="text-red-300 text-sm font-medium">Upload failed</p>
+          <p className="text-red-300/70 text-sm mt-1">{uploadError}</p>
+        </div>
+      )}
     </div>
   );
 }
