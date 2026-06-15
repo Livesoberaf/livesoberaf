@@ -34,6 +34,7 @@ export default function StudioRecorder({ slotId, promptId, onDone }: Props) {
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [progress, setProgress]     = useState(0);
   const [cameraError, setCameraError] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   useEffect(() => {
     return () => {
@@ -106,6 +107,7 @@ export default function StudioRecorder({ slotId, promptId, onDone }: Props) {
     if (!recordedBlob) return;
     setState("uploading");
     setProgress(0);
+    setUploadError("");
 
     const progressInterval = setInterval(() => {
       setProgress((p) => Math.min(p + 5, 90));
@@ -130,10 +132,11 @@ export default function StudioRecorder({ slotId, promptId, onDone }: Props) {
 
       setState("done");
       onDone();
-    } catch {
+    } catch (err) {
       clearInterval(progressInterval);
       setState("preview");
       setProgress(0);
+      setUploadError(err instanceof Error ? err.message : "Upload failed — please try again.");
     }
   }
 
@@ -232,6 +235,9 @@ export default function StudioRecorder({ slotId, promptId, onDone }: Props) {
               Save this clip
             </button>
           </>
+        )}
+        {uploadError && (
+          <p className="text-red-300/70 text-sm w-full">{uploadError}</p>
         )}
 
         {state === "uploading" && (
