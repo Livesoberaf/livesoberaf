@@ -34,24 +34,50 @@ export default function UploadForm({ slotId, promptId, alreadyUploaded }: Props)
     setProgress(0);
 
     const progressInterval = setInterval(() => {
-      setProgress((p) => Math.min(p + 4, 90));
+      setProgress((p) => Math.min(p + 2, 80));
     }, 400);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      if (slotId)   formData.append("slotId",   slotId);
-      if (promptId) formData.append("promptId", promptId);
+      // Step 1: get signed upload params
+      const sigRes = await fetch("/api/sponsor/cloudinary-signature", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ promptId, slotId }),
+      });
+      if (!sigRes.ok) { const d = await sigRes.json(); throw new Error(d.error ?? "Could not prepare upload."); }
+      const sig = await sigRes.json();
 
-      const res = await fetch("/api/sponsor/upload", { method: "POST", body: formData });
+      setProgress(10);
+
+      // Step 2: upload directly to Cloudinary
+      const cloudForm = new FormData();
+      cloudForm.append("file",       file);
+      cloudForm.append("api_key",    sig.apiKey);
+      cloudForm.append("timestamp",  String(sig.timestamp));
+      cloudForm.append("signature",  sig.signature);
+      cloudForm.append("folder",     sig.folder);
+      cloudForm.append("public_id",  sig.publicId);
+      cloudForm.append("overwrite",  "true");
+
+      const cloudRes = await fetch(
+        `https://api.cloudinary.com/v1_1/${sig.cloudName}/video/upload`,
+        { method: "POST", body: cloudForm }
+      );
+      if (!cloudRes.ok) throw new Error("Video upload failed — please try again.");
+      const cloudData = await cloudRes.json();
+
       clearInterval(progressInterval);
+      setProgress(90);
+
+      // Step 3: save metadata to Supabase
+      const saveRes = await fetch("/api/sponsor/save-clip", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ cloudinaryUrl: cloudData.secure_url, promptId, slotId }),
+      });
+      if (!saveRes.ok) { const d = await saveRes.json(); throw new Error(d.error ?? "Failed to save clip."); }
+
       setProgress(100);
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error ?? "Upload failed.");
-      }
-
       setUploadStatus("done");
       setUploaded(true);
     } catch (err: unknown) {
