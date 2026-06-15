@@ -57,7 +57,6 @@ export default function UploadForm({ slotId, promptId, alreadyUploaded }: Props)
       cloudForm.append("signature",  sig.signature);
       cloudForm.append("folder",     sig.folder);
       cloudForm.append("public_id",  sig.publicId);
-      cloudForm.append("overwrite",  "true");
 
       const cloudRes = await fetch(
         `https://api.cloudinary.com/v1_1/${sig.cloudName}/video/upload`,
@@ -87,8 +86,8 @@ export default function UploadForm({ slotId, promptId, alreadyUploaded }: Props)
     }
   }
 
-  // Success state
-  if (uploaded && (uploadStatus === "done" || (alreadyUploaded && uploadStatus === "idle" && !fileName))) {
+  // Success state — triggered by recorder's onDone() or file upload completing
+  if (uploaded) {
     return (
       <div className="rounded-[2rem] border border-white/10 bg-white/5 p-8">
         <p className="text-sm uppercase tracking-[0.3em] text-white/40 mb-2">Saved</p>

@@ -135,7 +135,6 @@ export default function StudioRecorder({ slotId, promptId, onDone }: Props) {
       cloudForm.append("signature",  sig.signature);
       cloudForm.append("folder",     sig.folder);
       cloudForm.append("public_id",  sig.publicId);
-      cloudForm.append("overwrite",  "true");
 
       const cloudRes = await fetch(
         `https://api.cloudinary.com/v1_1/${sig.cloudName}/video/upload`,
