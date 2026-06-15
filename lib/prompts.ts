@@ -33,7 +33,8 @@ export async function getMattPrompts(): Promise<Prompt[]> {
     .select("*")
     .eq("role", "matt")
     .eq("active", true)
-    .order("trigger_type", { ascending: true })
+    .order("day_number", { ascending: true, nullsFirst: false })
+    .order("trigger_type", { ascending: true })  // 'day' sorts before 'mood' — daily thought first within each day
     .order("sequence", { ascending: true });
   return (data as Prompt[]) ?? [];
 }

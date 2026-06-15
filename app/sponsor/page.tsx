@@ -72,43 +72,52 @@ async function MattDashboard({ creatorId }: { creatorId: string }) {
     getRecordedPromptIds(creatorId),
   ]);
 
-  const moodPrompts  = prompts.filter((p) => p.trigger_type === "mood");
-  const dayPrompts   = prompts.filter((p) => p.trigger_type === "day");
+  // Group by day_number
+  const byDay = new Map<number, Prompt[]>();
+  for (const p of prompts) {
+    const day = p.day_number ?? 0;
+    if (!byDay.has(day)) byDay.set(day, []);
+    byDay.get(day)!.push(p);
+  }
+  const sortedDays = [...byDay.keys()].filter((d) => d > 0).sort((a, b) => a - b);
 
-  const done = prompts.filter((p) => recorded.has(p.id)).length;
+  const totalDone    = prompts.filter((p) => recorded.has(p.id)).length;
+  const completeDays = sortedDays.filter((d) =>
+    byDay.get(d)!.every((p) => recorded.has(p.id))
+  ).length;
 
   return (
     <>
       <p className="mt-8 max-w-3xl text-xl leading-8 text-white/75">
-        {done} of {prompts.length} responses recorded.
+        {totalDone} of {prompts.length} clips recorded — {completeDays} of {sortedDays.length} days complete.
       </p>
       <p className="mt-4 text-lg leading-8 text-white/60">
-        {done === 0
-          ? "Start with the mood responses — they're triggered whenever someone checks in."
-          : done === prompts.length
-          ? "All responses recorded. The pipeline is live."
-          : "Every response you record reaches someone at the right moment."}
+        {totalDone === 0
+          ? "Start anywhere — each day has a daily thought and four mood responses."
+          : totalDone === prompts.length
+          ? "Every clip recorded. The full first month is live."
+          : "Each clip you record reaches the right person at the right moment."}
       </p>
 
-      {moodPrompts.length > 0 && (
-        <section className="mt-20 space-y-8">
-          <h2 className="text-3xl font-semibold tracking-[0.15em]">MOOD RESPONSES</h2>
-          <p className="text-lg leading-8 text-white/60">
-            Triggered when someone checks in and says how they&apos;re feeling.
-          </p>
-          <PromptList prompts={moodPrompts} recorded={recorded} />
-        </section>
-      )}
+      {sortedDays.map((day) => {
+        const dayPrompts = byDay.get(day)!;
+        const dayDone    = dayPrompts.filter((p) => recorded.has(p.id)).length;
+        const allDone    = dayDone === dayPrompts.length;
 
-      {dayPrompts.length > 0 && (
-        <section className="mt-20 space-y-8">
-          <h2 className="text-3xl font-semibold tracking-[0.15em]">DAILY IDEAS</h2>
-          <p className="text-lg leading-8 text-white/60">
-            Delivered at a specific point in someone&apos;s recovery journey.
-          </p>
-          <PromptList prompts={dayPrompts} recorded={recorded} showDay />
-        </section>
-      )}
+        return (
+          <section key={day} className="mt-14">
+            <div className="flex items-center gap-5 mb-4">
+              <h2 className={`text-2xl font-semibold tracking-[0.12em] ${allDone ? "text-white/25" : "text-white"}`}>
+                DAY {day}
+              </h2>
+              <span className="text-xs uppercase tracking-[0.25em] text-white/25">
+                {dayDone}/{dayPrompts.length}
+              </span>
+            </div>
+            <PromptList prompts={dayPrompts} recorded={recorded} />
+          </section>
+        );
+      })}
     </>
   );
 }
