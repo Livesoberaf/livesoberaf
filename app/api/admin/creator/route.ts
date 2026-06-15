@@ -28,15 +28,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const { name, pathway, region, sex, age_range, access_code } = await request.json();
+  const { name, role, pathway, region, sex, age_range, access_code } = await request.json();
 
-  if (!name || !pathway || !region || !sex || !access_code) {
-    return NextResponse.json({ error: "name, pathway, region, sex and access_code are required." }, { status: 400 });
+  if (!name || !region || !sex || !access_code) {
+    return NextResponse.json({ error: "name, region, sex and access_code are required." }, { status: 400 });
   }
 
   const { data, error } = await getSupabaseAdmin()
     .from("creators")
-    .insert({ name, pathway, region, sex, age_range: age_range ?? "", access_code })
+    .insert({
+      name,
+      role:      role      ?? "creator",
+      pathway:   pathway   || null,
+      region, sex,
+      age_range: age_range ?? "",
+      access_code,
+    })
     .select("id, name, pathway, region, sex, age_range, access_code, created_at")
     .single();
 

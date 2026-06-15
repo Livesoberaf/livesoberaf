@@ -22,7 +22,7 @@ export default function CreatorManager({ creators: initial }: { creators: Creato
   const [error, setError]        = useState("");
 
   const [form, setForm] = useState({
-    name: "", pathway: "alcohol", region: "UK",
+    name: "", role: "creator", pathway: "alcohol", region: "UK",
     sex: "male", age_range: "", access_code: "",
   });
 
@@ -45,7 +45,7 @@ export default function CreatorManager({ creators: initial }: { creators: Creato
       if (!res.ok) { setError(data.error ?? "Failed."); return; }
       setCreators((c) => [...c, data.creator]);
       setAdding(false);
-      setForm({ name: "", pathway: "alcohol", region: "UK", sex: "male", age_range: "", access_code: "" });
+      setForm({ name: "", role: "creator", pathway: "alcohol", region: "UK", sex: "male", age_range: "", access_code: "" });
     } catch {
       setError("Something went wrong.");
     } finally {
@@ -96,7 +96,12 @@ export default function CreatorManager({ creators: initial }: { creators: Creato
       {adding ? (
         <form onSubmit={handleAdd} className="mt-10 flex flex-col gap-4 max-w-md">
           <input placeholder="Name (e.g. Adam)"    value={form.name}        onChange={field("name")}        className={inputCls} required />
+          <select value={form.role} onChange={field("role")} className={inputCls}>
+            <option value="creator">creator</option>
+            <option value="matt">matt</option>
+          </select>
           <select value={form.pathway} onChange={field("pathway")} className={inputCls}>
+            <option value="">universal (Matt)</option>
             {["alcohol","codeine","cocaine","cannabis","gambling","nicotine"].map((p) => (
               <option key={p} value={p}>{p}</option>
             ))}
