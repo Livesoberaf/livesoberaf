@@ -47,7 +47,7 @@ export default function StudioRecorder({ slotId, promptId, onDone }: Props) {
     setCameraError(false);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 15 } },
         audio: true,
       });
       streamRef.current = stream;
@@ -68,7 +68,11 @@ export default function StudioRecorder({ slotId, promptId, onDone }: Props) {
     setSeconds(0);
 
     const mimeType = getBestMimeType();
-    const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    const recorder = new MediaRecorder(stream, {
+      ...(mimeType ? { mimeType } : {}),
+      videoBitsPerSecond: 500_000,   // 500 kbps — fine for talking-head clips
+      audioBitsPerSecond:  64_000,
+    });
 
     recorder.ondataavailable = (e) => {
       if (e.data.size > 0) chunksRef.current.push(e.data);
@@ -124,10 +128,13 @@ export default function StudioRecorder({ slotId, promptId, onDone }: Props) {
       const sig = await sigRes.json();
 
       setProgress(10);
+      clearInterval(progressInterval); // real progress takes over from here
 
-      // Step 2: upload directly to Cloudinary — bypasses Vercel's 4.5 MB limit
-      const key       = promptId ?? slotId ?? "clip";
-      const file      = new File([recordedBlob], `${key}.webm`, { type: recordedBlob.type });
+      // Step 2: upload directly to Cloudinary
+      // Use fetch (not XHR) for iOS Safari compatibility — XHR blob uploads fail on iOS
+      const key  = promptId ?? slotId ?? "clip";
+      const ext  = (mimeType || "").includes("mp4") ? "mp4" : "webm";
+      const file = new File([recordedBlob], `${key}.${ext}`, { type: recordedBlob.type });
       const cloudForm = new FormData();
       cloudForm.append("file",       file);
       cloudForm.append("api_key",    sig.apiKey);
@@ -136,14 +143,31 @@ export default function StudioRecorder({ slotId, promptId, onDone }: Props) {
       cloudForm.append("folder",     sig.folder);
       cloudForm.append("public_id",  sig.publicId);
 
-      const cloudRes = await fetch(
-        `https://api.cloudinary.com/v1_1/${sig.cloudName}/video/upload`,
-        { method: "POST", body: cloudForm }
-      );
-      if (!cloudRes.ok) throw new Error("Video upload failed — please try again.");
-      const cloudData = await cloudRes.json();
+      // Simulate progress while fetch uploads (fetch has no upload progress API on iOS)
+      const fakeProgress = setInterval(() => {
+        setProgress((p) => Math.min(p + 3, 88));
+      }, 600);
 
-      clearInterval(progressInterval);
+      const controller  = new AbortController();
+      const uploadTimer = setTimeout(() => controller.abort(), 120_000);
+
+      let cloudData: { secure_url: string } = { secure_url: "" };
+      try {
+        const cloudRes = await fetch(
+          `https://api.cloudinary.com/v1_1/${sig.cloudName}/video/upload`,
+          { method: "POST", body: cloudForm, signal: controller.signal }
+        );
+        clearTimeout(uploadTimer);
+        clearInterval(fakeProgress);
+        if (!cloudRes.ok) throw new Error("Video upload failed — please try again.");
+        cloudData = await cloudRes.json();
+      } catch (e) {
+        clearTimeout(uploadTimer);
+        clearInterval(fakeProgress);
+        if (e instanceof Error && e.name === "AbortError")
+          throw new Error("Upload timed out — check your connection and try again.");
+        throw e;
+      }
       setProgress(90);
 
       // Step 3: save the Cloudinary URL + metadata to Supabase (no file, tiny request)
