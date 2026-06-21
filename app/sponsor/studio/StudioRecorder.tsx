@@ -133,7 +133,7 @@ export default function StudioRecorder({ slotId, promptId, onDone }: Props) {
       // Step 2: upload directly to Cloudinary
       // Use fetch (not XHR) for iOS Safari compatibility — XHR blob uploads fail on iOS
       const key  = promptId ?? slotId ?? "clip";
-      const ext  = (mimeType || "").includes("mp4") ? "mp4" : "webm";
+      const ext  = recordedBlob.type.includes("mp4") ? "mp4" : "webm";
       const file = new File([recordedBlob], `${key}.${ext}`, { type: recordedBlob.type });
       const cloudForm = new FormData();
       cloudForm.append("file",       file);
