@@ -55,12 +55,16 @@ export async function POST(request: Request) {
         .maybeSingle();
 
       if (existing) {
-        await getSupabaseAdmin()
+        const { error: updateErr } = await getSupabaseAdmin()
           .from("peer_clips")
           .update({ cloudinary_url: cloudinaryUrl, status: "pending" })
           .eq("session_id", sessionId);
+        if (updateErr) {
+          console.error("save-clip update error:", updateErr);
+          return NextResponse.json({ error: updateErr.message }, { status: 500 });
+        }
       } else {
-        await getSupabaseAdmin()
+        const { error: insertErr } = await getSupabaseAdmin()
           .from("peer_clips")
           .insert({
             session_id:     sessionId,
@@ -83,6 +87,10 @@ export async function POST(request: Request) {
             mood:           prompt.mood,
             event:          prompt.event,
           });
+        if (insertErr) {
+          console.error("save-clip insert error:", insertErr);
+          return NextResponse.json({ error: insertErr.message }, { status: 500 });
+        }
       }
       return NextResponse.json({ ok: true });
     }
@@ -102,12 +110,16 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (existing) {
-      await getSupabaseAdmin()
+      const { error: updateErr } = await getSupabaseAdmin()
         .from("peer_clips")
         .update({ cloudinary_url: cloudinaryUrl, status: "pending" })
         .eq("session_id", sessionId);
+      if (updateErr) {
+        console.error("save-clip update error (slot):", updateErr);
+        return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      }
     } else {
-      await getSupabaseAdmin()
+      const { error: insertErr } = await getSupabaseAdmin()
         .from("peer_clips")
         .insert({
           session_id:     sessionId,
@@ -124,6 +136,10 @@ export async function POST(request: Request) {
           app_placement,
           role:           "creator",
         });
+      if (insertErr) {
+        console.error("save-clip insert error (slot):", insertErr);
+        return NextResponse.json({ error: insertErr.message }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ ok: true });
