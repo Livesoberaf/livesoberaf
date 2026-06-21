@@ -67,7 +67,7 @@ export async function POST(request: Request) {
             question_index: 0,
             sharer_name:    creator.name,
             day_number:     prompt.day_number ?? 0,
-            pathway:        isMatt ? null : (prompt.pathway ?? creator.pathway),
+            pathway:        isMatt ? "universal" : (prompt.pathway ?? creator.pathway),
             age_range:      isMatt ? ""   : creator.age_range,
             sex:            isMatt ? ""   : creator.sex,
             region:         isMatt ? ""   : creator.region,
