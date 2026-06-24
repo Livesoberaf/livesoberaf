@@ -132,9 +132,9 @@ export default function UploadForm({ slotId, promptId, alreadyUploaded }: Props)
       {/* Upload tab */}
       {tab === "upload" && (
         <div className="flex flex-col gap-6">
-          <div
+          <label
+            htmlFor="video-file-input"
             className="rounded-[2rem] border border-white/10 bg-white/5 p-10 flex flex-col items-center gap-4 cursor-pointer hover:bg-white/8 transition-colors"
-            onClick={() => inputRef.current?.click()}
           >
             <p className="text-white/60 text-sm">
               {fileName ? fileName : "Choose a video file"}
@@ -142,9 +142,16 @@ export default function UploadForm({ slotId, promptId, alreadyUploaded }: Props)
             <p className="text-white/25 text-xs uppercase tracking-[0.2em]">
               MP4 · MOV · WebM · up to 500 MB
             </p>
-          </div>
+          </label>
 
-          <input ref={inputRef} type="file" accept="video/*" className="hidden" onChange={handleFileChange} />
+          <input
+            ref={inputRef}
+            id="video-file-input"
+            type="file"
+            accept="video/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
 
           {uploadStatus === "uploading" && (
             <div className="flex flex-col gap-2">
