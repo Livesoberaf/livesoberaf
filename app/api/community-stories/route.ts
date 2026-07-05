@@ -41,6 +41,7 @@ export async function GET() {
       .select("session_id, sharer_name, pathway, day_number, age_range, sex, region, cloudinary_url, question_index, created_at")
       .eq("status",  "approved")
       .eq("consent", true)
+      .eq("app_placement", "story")  // public Stories = sharer story clips only; never creator/Matt/mood/day clips
       .order("created_at", { ascending: false });
 
     if (error || !data) return NextResponse.json({ stories: [] });
