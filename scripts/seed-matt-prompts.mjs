@@ -3,7 +3,7 @@
 // - Updates the 150 existing placeholder prompts with proper briefs.
 
 const URL  = "https://rczzdvfrjgofrxvhzmmj.supabase.co/rest/v1/prompts";
-const KEY  = "REDACTED";
+const KEY  = process.env.SUPABASE_SERVICE_KEY;
 const HDR  = { "apikey": KEY, "Authorization": `Bearer ${KEY}`, "Content-Type": "application/json", "Prefer": "return=minimal" };
 
 // ── Prompt data — 30 days × 6 prompts ────────────────────────────────────────

@@ -1,6 +1,6 @@
 // Applies the push_tokens v2 migration: adds timezone and sober_date columns.
 const SUPABASE_URL = "https://rczzdvfrjgofrxvhzmmj.supabase.co";
-const SERVICE_KEY  = "REDACTED";
+const SERVICE_KEY  = process.env.SUPABASE_SERVICE_KEY;
 
 // Use the Management API to run raw SQL
 const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/exec_sql`, {

@@ -4,7 +4,7 @@
 //   late_afternoon=16, evening=18, late_evening=20, before_bed=22
 
 const URL = "https://rczzdvfrjgofrxvhzmmj.supabase.co/rest/v1/prompts";
-const KEY  = "REDACTED";
+const KEY  = process.env.SUPABASE_SERVICE_KEY;
 const HDR  = { "apikey": KEY, "Authorization": `Bearer ${KEY}`, "Content-Type": "application/json", "Prefer": "return=minimal" };
 
 // ── Fix Day 1: change "lunch" moment → "late_evening" ────────────────────────
