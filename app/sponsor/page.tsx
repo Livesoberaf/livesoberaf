@@ -93,7 +93,7 @@ async function MattDashboard({ creatorId }: { creatorId: string }) {
       </p>
       <p className="mt-4 text-lg leading-8 text-white/60">
         {totalDone === 0
-          ? "Start anywhere — each day has a daily thought and four mood responses."
+          ? "Start anywhere — each day has a daily thought and five mood responses."
           : totalDone === prompts.length
           ? "Every clip recorded. The full first month is live."
           : "Each clip you record reaches the right person at the right moment."}

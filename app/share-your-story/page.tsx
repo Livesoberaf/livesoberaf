@@ -69,6 +69,7 @@ export default function ShareYourStoryPage() {
   const canvasRef        = useRef<HTMLCanvasElement | null>(null);
   const animationRef     = useRef<number | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const canvasStreamRef  = useRef<MediaStream | null>(null);
   const chunksRef        = useRef<Blob[]>([]);
   const timerRef         = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -148,9 +149,19 @@ export default function ShareYourStoryPage() {
     const canvas = canvasRef.current;
     if (!video || !canvas || !stream) return;
 
+    // Cancel any lingering animation loop from a previous recording
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+    // Release any previous canvas capture stream
+    canvasStreamRef.current?.getTracks().forEach((t) => t.stop());
+    canvasStreamRef.current = null;
+
     chunksRef.current = [];
     setRecordedBlob(null);
-    setPreviewUrl(null);
+    // Revoke the previous preview URL so the browser can free that video memory
+    setPreviewUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return null; });
     setSeconds(0);
 
     canvas.width  = video.videoWidth  || 640;
@@ -177,13 +188,33 @@ export default function ShareYourStoryPage() {
     drawFrame();
 
     const canvasStream = canvas.captureStream(30);
+    canvasStreamRef.current = canvasStream;
     stream.getAudioTracks().forEach((t) => canvasStream.addTrack(t));
 
-    const recorder = new MediaRecorder(canvasStream, { mimeType: "video/webm" });
+    // Pick the best supported MIME type — Safari doesn't support video/webm
+    const mimeType = ["video/webm;codecs=vp9", "video/webm", "video/mp4"].find(
+      (t) => MediaRecorder.isTypeSupported(t)
+    ) ?? "";
+
+    let recorder: MediaRecorder;
+    try {
+      recorder = new MediaRecorder(canvasStream, mimeType ? { mimeType } : {});
+    } catch {
+      // Browser doesn't support any known type — surface the error rather than freezing
+      canvasStream.getTracks().forEach((t) => t.stop());
+      canvasStreamRef.current = null;
+      setCameraError(true);
+      return;
+    }
+
     recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
     recorder.onstop = () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      const blob = new Blob(chunksRef.current, { type: "video/webm" });
+      // Release the canvas capture so the browser can free GPU/CPU resources
+      canvasStreamRef.current?.getTracks().forEach((t) => t.stop());
+      canvasStreamRef.current = null;
+      const finalMime = recorder.mimeType || mimeType || "video/webm";
+      const blob = new Blob(chunksRef.current, { type: finalMime });
       setRecordedBlob(blob);
       setPreviewUrl(URL.createObjectURL(blob));
       setRecording(false);
@@ -278,7 +309,7 @@ export default function ShareYourStoryPage() {
     const questionIndex = currentQuestion;
 
     setRecordedBlob(null);
-    setPreviewUrl(null);
+    setPreviewUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return null; });
 
     uploadInBackground(blob, questionIndex);
 
@@ -292,8 +323,8 @@ export default function ShareYourStoryPage() {
   }
 
   function reRecord() {
+    setPreviewUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return null; });
     setRecordedBlob(null);
-    setPreviewUrl(null);
     setSeconds(0);
   }
 
@@ -574,7 +605,7 @@ export default function ShareYourStoryPage() {
     return (
       <main className="min-h-screen bg-black px-6 py-16 text-white flex items-center justify-center">
         <p className="text-white/60">
-          Camera access is required. Please allow camera permissions and reload.
+          Recording is not available in this browser. Please try Chrome or Firefox, or allow camera permissions and reload.
         </p>
       </main>
     );

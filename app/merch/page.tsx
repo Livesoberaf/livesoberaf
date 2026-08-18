@@ -43,12 +43,19 @@ const PRODUCTS: Product[] = [
   },
   {
     id: "white-tee-1",
-    name: "LIVESOBERAF T-SHIRT 03",
+    name: "LIVESOBERAF T-SHIRT — WHITE",
     type: "tee",
     colour: "WHITE",
     description: "Premium white tee with LIVESOBERAF design.",
-    price: "£TBC",
-    images: [],
+    price: "£30.00",
+    images: [
+      "/merch/white-tee-01.jpeg",
+      "/merch/white-tee-06.jpeg",
+      "/merch/white-tee-03.jpeg",
+      "/merch/white-tee-02.jpeg",
+      "/merch/white-tee-05.jpeg",
+      "/merch/white-tee-04.jpeg",
+    ],
   },
   {
     id: "white-tee-2",

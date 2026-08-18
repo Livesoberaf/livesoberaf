@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day One · What happens in your body</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d1b24;
+    --panel:#14262f;
+    --panel-2:#183039;
+    --line:rgba(255,255,255,.08);
+    --ink:#eaf2f2;
+    --muted:#93a7ae;
+    --heal:#57d0ac;   /* recovery / steadying */
+    --warm:#f0a35e;   /* toxin / elevated, receding */
+    --water:#6fb7d8;  /* fluids */
+    --node:#2b4551;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(1200px 700px at 50% -8%, #16303c 0%, var(--bg) 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:"Inter",system-ui,sans-serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    padding:0 20px 120px;
+  }
+  .wrap{max-width:720px;margin:0 auto}
+
+  /* ---------- HERO ---------- */
+  header{padding:96px 0 40px;text-align:center}
+  .eyebrow{
+    font-size:12px;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--heal);font-weight:600;
+  }
+  h1{
+    font-family:"Fraunces",serif;font-weight:500;
+    font-size:clamp(48px,12vw,88px);line-height:.98;
+    margin:14px 0 20px;letter-spacing:-.01em;
+  }
+  h1 em{font-style:italic;color:var(--heal)}
+  .lede{color:var(--muted);font-size:18px;max-width:52ch;margin:0 auto}
+
+  .pulse{
+    width:14px;height:14px;border-radius:50%;background:var(--heal);
+    margin:44px auto 0;box-shadow:0 0 0 0 rgba(87,208,172,.6);
+    animation:beatpulse 2.4s ease-out infinite;
+  }
+  @keyframes beatpulse{
+    0%{box-shadow:0 0 0 0 rgba(87,208,172,.55)}
+    70%{box-shadow:0 0 0 26px rgba(87,208,172,0)}
+    100%{box-shadow:0 0 0 0 rgba(87,208,172,0)}
+  }
+
+  /* ---------- TIMELINE ---------- */
+  .timeline{position:relative;padding-left:34px;margin-top:30px}
+  .timeline::before{
+    content:"";position:absolute;left:7px;top:6px;bottom:60px;width:2px;
+    background:linear-gradient(var(--warm),var(--heal));opacity:.5;
+  }
+  .stage{position:relative;padding:26px 0 46px}
+  .stage::before{
+    content:"";position:absolute;left:-34px;top:34px;width:16px;height:16px;
+    border-radius:50%;background:var(--bg);border:2px solid var(--heal);
+  }
+  .hour{
+    font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--muted);font-weight:600;
+  }
+  .stage h2{
+    font-family:"Fraunces",serif;font-weight:500;font-size:26px;
+    margin:6px 0 16px;letter-spacing:-.01em;line-height:1.15;
+  }
+  .stage p{color:#c4d2d6;font-size:16px}
+  .stage p .k{color:var(--ink);font-weight:600}
+
+  /* scene panel */
+  .scene{
+    background:linear-gradient(180deg,var(--panel-2),var(--panel));
+    border:1px solid var(--line);border-radius:18px;
+    height:190px;margin:0 0 18px;position:relative;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .scene .cap{
+    position:absolute;top:12px;left:14px;font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--muted);font-weight:600;
+  }
+  .readout{
+    position:absolute;top:12px;right:14px;font-family:"Fraunces",serif;
+    font-size:15px;color:var(--muted);
+  }
+
+  /* reveal */
+  .stage{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}
+  .stage.in{opacity:1;transform:none}
+
+  /* ===== SCENE 1: BAC falling ===== */
+  .gauge{width:64px;height:120px;border:2px solid var(--line);border-radius:32px;
+    position:relative;overflow:hidden;background:rgba(0,0,0,.18)}
+  .gauge .liquid{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(var(--warm),#c9723a);
+    height:82%;animation:drain 7s ease-in-out infinite}
+  @keyframes drain{0%{height:82%}80%{height:10%}100%{height:82%}}
+  .molecules{position:absolute;inset:0}
+  .molecules i{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--warm);opacity:.8}
+  .m1{left:26%;top:30%;animation:rise 3.2s ease-in infinite}
+  .m2{left:60%;top:50%;animation:rise 3.8s ease-in infinite .8s}
+  .m3{left:44%;top:66%;animation:rise 4.2s ease-in infinite 1.6s}
+  @keyframes rise{0%{transform:translateY(0);opacity:.85}100%{transform:translateY(-70px);opacity:0}}
+
+  /* ===== SCENE 2: liver conversion ===== */
+  .flow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;padding:0 14px}
+  .chip{border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;white-space:nowrap}
+  .chip.tox{color:var(--warm);border-color:rgba(240,163,94,.45)}
+  .chip.safe{color:var(--heal);border-color:rgba(87,208,172,.45)}
+  .arrow{width:26px;height:2px;background:var(--muted);position:relative;opacity:.6}
+  .arrow::after{content:"";position:absolute;right:-1px;top:-3px;border-left:6px solid var(--muted);border-top:4px solid transparent;border-bottom:4px solid transparent}
+  .flow .dot{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--warm);top:50%;left:0;
+    box-shadow:0 0 10px var(--warm);animation:convey 4.5s linear infinite}
+  @keyframes convey{
+    0%{left:14%;background:var(--warm);box-shadow:0 0 10px var(--warm)}
+    45%{background:var(--warm)}
+    55%{background:var(--heal);box-shadow:0 0 10px var(--heal)}
+    100%{left:82%;background:var(--heal);box-shadow:0 0 10px var(--heal)}
+  }
+
+  /* ===== SCENE 3: brain balance ===== */
+  .wave{width:80%;height:70px}
+  .wave path{fill:none;stroke-width:2.5;stroke-linecap:round}
+  .g-gaba{stroke:var(--heal);opacity:.55}
+  .g-glut{stroke:var(--warm);
+    stroke-dasharray:600;stroke-dashoffset:600;animation:draw 3.6s ease-in-out infinite alternate}
+  @keyframes draw{from{stroke-dashoffset:600}to{stroke-dashoffset:0}}
+  .legend{position:absolute;bottom:14px;left:0;right:0;display:flex;gap:18px;justify-content:center;font-size:12px;color:var(--muted)}
+  .legend span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:middle}
+  .legend .a::before{background:var(--heal)}
+  .legend .b::before{background:var(--warm)}
+
+  /* ===== SCENE 4: heart ===== */
+  .heartbox{display:flex;align-items:center;gap:22px}
+  .heart{width:40px;height:40px;background:var(--warm);
+    clip-path:path("M20 36 C 4 24, 0 12, 10 6 C 15 3, 20 8, 20 12 C 20 8, 25 3, 30 6 C 40 12, 36 24, 20 36 Z");
+    animation:beat 1s ease-in-out infinite}
+  @keyframes beat{0%,100%{transform:scale(1)}15%{transform:scale(1.18)}30%{transform:scale(1)}45%{transform:scale(1.1)}}
+  .ecg{width:150px;height:60px}
+  .ecg path{fill:none;stroke:var(--warm);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;
+    stroke-dasharray:400;stroke-dashoffset:400;animation:trace 1.6s linear infinite}
+  @keyframes trace{to{stroke-dashoffset:-400}}
+
+  /* ===== SCENE 5: hydration ===== */
+  .glass{width:76px;height:120px;border:2px solid var(--line);border-bottom-left-radius:14px;border-bottom-right-radius:14px;
+    position:relative;overflow:hidden;background:rgba(0,0,0,.18)}
+  .glass .water{position:absolute;left:0;right:0;bottom:0;height:22%;background:linear-gradient(var(--water),#3f86a8);
+    animation:fill 6s ease-in-out infinite}
+  @keyframes fill{0%{height:22%}80%{height:86%}100%{height:22%}}
+  .drop{position:absolute;top:-10px;left:50%;width:8px;height:12px;border-radius:0 60% 60% 60%;
+    transform:translateX(-50%) rotate(45deg);background:var(--water);animation:falldrop 2.2s ease-in infinite}
+  @keyframes falldrop{0%{top:-14px;opacity:0}20%{opacity:1}70%{top:70px;opacity:1}80%{opacity:0}100%{opacity:0}}
+
+  /* ===== SCENE 6: blood sugar ===== */
+  .sugar{width:82%;height:70px}
+  .sugar path{fill:none;stroke:var(--heal);stroke-width:2.5;stroke-linecap:round;
+    stroke-dasharray:700;stroke-dashoffset:700;animation:draw2 4s ease-out infinite}
+  @keyframes draw2{0%{stroke-dashoffset:700}70%,100%{stroke-dashoffset:0}}
+
+  /* ---------- SAFETY ---------- */
+  .safety{
+    margin:24px 0 0;border:1px solid rgba(240,163,94,.35);
+    background:linear-gradient(180deg,rgba(240,163,94,.08),rgba(240,163,94,.02));
+    border-radius:18px;padding:24px 26px;
+  }
+  .safety .tag{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--warm);font-weight:600}
+  .safety h2{font-family:"Fraunces",serif;font-weight:500;font-size:23px;margin:8px 0 12px}
+  .safety p{color:#d2d9db;font-size:15px;margin-bottom:12px}
+  .safety p:last-child{margin-bottom:0}
+  .safety strong{color:#fff}
+
+  footer{color:var(--muted);font-size:13px;text-align:center;margin-top:56px;line-height:1.7}
+
+  @media (max-width:520px){
+    .stage h2{font-size:22px}
+    .flow{gap:8px}
+    .chip{padding:7px 11px;font-size:12px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important}
+    .gauge .liquid{height:24%}
+    .glass .water{height:80%}
+    .g-glut,.ecg path,.sugar path{stroke-dashoffset:0}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">The First 24 Hours</div>
+    <h1>Day <em>One</em></h1>
+    <p class="lede">Your last drink is behind you. Here's what your body actually starts doing over the next 24 hours — and why the first day can feel so rough while it's healing.</p>
+    <div class="pulse" aria-hidden="true"></div>
+  </header>
+
+  <div class="timeline">
+
+    <!-- 1 -->
+    <section class="stage">
+      <div class="hour">0–3 Hours</div>
+      <h2>Your blood alcohol starts falling</h2>
+      <div class="scene">
+        <span class="cap">Blood alcohol</span>
+        <span class="readout">falling</span>
+        <div class="gauge" aria-hidden="true">
+          <div class="liquid"></div>
+          <div class="molecules"><i class="m1"></i><i class="m2"></i><i class="m3"></i></div>
+        </div>
+      </div>
+      <p>With no more alcohol coming in, your <span class="k">blood alcohol only goes down</span>. Your liver breaks it down at a roughly fixed pace — on the order of one standard drink per hour — and nothing (coffee, water, a cold shower) can speed that up. You simply have to give it time.</p>
+    </section>
+
+    <!-- 2 -->
+    <section class="stage">
+      <div class="hour">0–12 Hours</div>
+      <h2>Your liver works overtime</h2>
+      <div class="scene">
+        <span class="cap">In the liver</span>
+        <div class="flow" aria-hidden="true">
+          <span class="chip">Alcohol</span>
+          <span class="arrow"></span>
+          <span class="chip tox">Acetaldehyde</span>
+          <span class="arrow"></span>
+          <span class="chip safe">Acetate</span>
+          <span class="dot"></span>
+        </div>
+      </div>
+      <p>Your liver converts alcohol first into <span class="k">acetaldehyde</span> — a toxic compound — and then into harmless acetate. While that acetaldehyde is being cleared, it drives much of the nausea, flushing and generally "poisoned" feeling of a hangover. Over the day, the backlog clears.</p>
+    </section>
+
+    <!-- 3 -->
+    <section class="stage">
+      <div class="hour">6–24 Hours</div>
+      <h2>Your brain rebalances</h2>
+      <div class="scene">
+        <span class="cap">Nervous system</span>
+        <svg class="wave" viewBox="0 0 300 70" aria-hidden="true">
+          <path class="g-gaba" d="M0 40 Q 37 34 75 40 T 150 40 T 225 40 T 300 40"/>
+          <path class="g-glut" d="M0 40 L30 40 L40 12 L52 58 L64 40 L92 40 L104 14 L116 56 L128 40 L156 40 L168 10 L180 58 L192 40 L300 40"/>
+        </svg>
+        <div class="legend"><span class="a">GABA · calming</span><span class="b">Glutamate · excitatory</span></div>
+      </div>
+      <p>Alcohol had been boosting your brain's <span class="k">calming</span> signal (GABA) and dampening its <span class="k">excitatory</span> one (glutamate). With the alcohol gone, the brain is briefly left over-excited until it recalibrates — which is why day one can bring anxiety, irritability, a racing mind, tremors and broken sleep.</p>
+    </section>
+
+    <!-- 4 -->
+    <section class="stage">
+      <div class="hour">12–24 Hours</div>
+      <h2>Your heart runs a little hot</h2>
+      <div class="scene">
+        <span class="cap">Heart &amp; blood pressure</span>
+        <span class="readout">elevated</span>
+        <div class="heartbox" aria-hidden="true">
+          <div class="heart"></div>
+          <svg class="ecg" viewBox="0 0 150 60">
+            <path d="M0 30 L30 30 L38 30 L44 12 L50 48 L56 30 L86 30 L94 30 L100 12 L106 48 L112 30 L150 30"/>
+          </svg>
+        </div>
+      </div>
+      <p>That same over-excited nervous system revs up your "fight-or-flight" response, so <span class="k">heart rate and blood pressure often run higher</span> than usual on the first day — sometimes alongside sweating and a jittery, "wired" feeling. For most people this settles as the days pass.</p>
+    </section>
+
+    <!-- 5 -->
+    <section class="stage">
+      <div class="hour">Across the day</div>
+      <h2>You start rehydrating</h2>
+      <div class="scene">
+        <span class="cap">Hydration</span>
+        <span class="readout" style="color:var(--water)">refilling</span>
+        <div class="glass" aria-hidden="true">
+          <div class="drop"></div>
+          <div class="water"></div>
+        </div>
+      </div>
+      <p>Alcohol suppresses <span class="k">vasopressin</span>, the hormone that tells your kidneys to hold on to water — so you've been running dehydrated. As you take in fluids today, that reverses, easing the pounding dehydration headache and dry mouth.</p>
+    </section>
+
+    <!-- 6 -->
+    <section class="stage">
+      <div class="hour">Across the day</div>
+      <h2>Your blood sugar steadies</h2>
+      <div class="scene">
+        <span class="cap">Blood sugar</span>
+        <span class="readout">steadying</span>
+        <svg class="sugar" viewBox="0 0 300 70" aria-hidden="true">
+          <path d="M0 55 L26 18 L52 60 L78 22 L104 52 L130 30 L156 44 L182 36 L208 40 L300 40"/>
+        </svg>
+      </div>
+      <p>A liver busy processing alcohol does a poorer job of releasing stored glucose, so your <span class="k">blood sugar swings</span> — part of the shakiness and fatigue. On day one it begins to level out, especially once you're eating regular meals again.</p>
+    </section>
+
+  </div>
+
+  <div class="safety">
+    <div class="tag">Please read this</div>
+    <h2>When day one is a medical matter</h2>
+    <p>For someone who has been drinking <strong>heavily and daily</strong>, suddenly stopping can trigger dangerous withdrawal — including seizures and a life-threatening state called <strong>delirium tremens</strong> — most often in the first 1–3 days.</p>
+    <p>Warning signs include severe shaking, confusion, hallucinations, a racing heart or fever. If that sounds like you or someone you're helping, <strong>don't detox alone</strong> — contact a doctor or emergency services. Medically supervised withdrawal is safe, routine, and far more comfortable.</p>
+  </div>
+
+  <footer>
+    General education, not medical advice. Everyone's body and drinking history is different —<br>
+    if in doubt, talk to a healthcare professional.
+  </footer>
+
+</div>
+
+<script>
+  // Reveal each stage as it scrolls into view
+  const obs = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); obs.unobserve(e.target); } });
+  },{threshold:.2});
+  document.querySelectorAll('.stage').forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>
