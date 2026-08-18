@@ -270,12 +270,69 @@ function ProductSection({ title, children }: { title: string; children: React.Re
   );
 }
 
+function Lightbox({ images, startIndex, onClose }: { images: string[]; startIndex: number; onClose: () => void }) {
+  const [index, setIndex] = useState(startIndex);
+
+  function prev() { setIndex((i) => (i - 1 + images.length) % images.length); }
+  function next() { setIndex((i) => (i + 1) % images.length); }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <button
+        className="absolute right-5 top-5 text-white/50 hover:text-white text-3xl leading-none transition"
+        onClick={onClose}
+      >
+        ✕
+      </button>
+
+      {images.length > 1 && (
+        <button
+          className="absolute left-4 top-1/2 -translate-y-1/2 px-3 py-4 text-2xl text-white/50 hover:text-white transition"
+          onClick={(e) => { e.stopPropagation(); prev(); }}
+        >
+          ←
+        </button>
+      )}
+
+      <img
+        src={images[index]}
+        alt=""
+        className="max-h-[90vh] max-w-[90vw] object-contain"
+        onClick={(e) => e.stopPropagation()}
+      />
+
+      {images.length > 1 && (
+        <button
+          className="absolute right-4 top-1/2 -translate-y-1/2 px-3 py-4 text-2xl text-white/50 hover:text-white transition"
+          onClick={(e) => { e.stopPropagation(); next(); }}
+        >
+          →
+        </button>
+      )}
+
+      {images.length > 1 && (
+        <p className="absolute bottom-5 left-1/2 -translate-x-1/2 text-xs text-white/30 tracking-widest">
+          {index + 1} / {images.length}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function ProductCard({ product, children }: { product: Product; children: React.ReactNode }) {
   const [imageIndex, setImageIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const hasImages = product.images.length > 0;
 
   return (
     <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/5">
+
+      {lightboxOpen && (
+        <Lightbox images={product.images} startIndex={imageIndex} onClose={() => setLightboxOpen(false)} />
+      )}
 
       {/* Image area */}
       <div className="relative h-64 sm:h-72 lg:h-80 w-full overflow-hidden bg-neutral-900">
@@ -283,7 +340,8 @@ function ProductCard({ product, children }: { product: Product; children: React.
           <img
             src={product.images[imageIndex]}
             alt={product.name}
-            className="h-full w-full object-contain sm:object-cover"
+            className="h-full w-full cursor-zoom-in object-contain sm:object-cover"
+            onClick={() => setLightboxOpen(true)}
           />
         ) : (
           <div className="flex h-full items-center justify-center">
@@ -303,9 +361,12 @@ function ProductCard({ product, children }: { product: Product; children: React.
           >
             ←
           </button>
-          <span className="text-xs text-white/30">
+          <button
+            onClick={() => setLightboxOpen(true)}
+            className="text-xs text-white/30 hover:text-white/60 transition"
+          >
             {imageIndex + 1} / {product.images.length}
-          </span>
+          </button>
           <button
             onClick={() => setImageIndex((i) => (i + 1) % product.images.length)}
             className="px-2 py-1 text-white/50 hover:text-white transition"
