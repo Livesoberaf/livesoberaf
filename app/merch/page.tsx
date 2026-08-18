@@ -26,10 +26,12 @@ const PRODUCTS: Product[] = [
     description: "Premium black tee with LIVESOBERAF design.",
     price: "£30.00",
     images: [
-      "/merch/IMG_0140.jpeg",
-      "/merch/IMG_0167.jpeg",
-      "/merch/IMG_0168.jpeg",
-      "/merch/IMG_0179.jpeg",
+      "/merch/black-tee-01.jpg",
+      "/merch/black-tee-06.jpg",
+      "/merch/black-tee-03.jpg",
+      "/merch/black-tee-02.jpg",
+      "/merch/black-tee-05.jpg",
+      "/merch/black-tee-04.jpg",
     ],
   },
   {
