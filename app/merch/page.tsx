@@ -342,7 +342,7 @@ function ProductCard({ product, children }: { product: Product; children: React.
           <img
             src={product.images[imageIndex]}
             alt={product.name}
-            className="h-full w-full cursor-zoom-in object-contain sm:object-cover"
+            className="h-full w-full cursor-zoom-in object-contain sm:object-cover sm:object-top"
             onClick={() => setLightboxOpen(true)}
           />
         ) : (
