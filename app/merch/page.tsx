@@ -98,9 +98,11 @@ const PRODUCTS: Product[] = [
     description: "Simple tote bag with LIVESOBERAF branding.",
     price: "£15.00",
     images: [
-      "/merch/IMG_0195.jpeg",
-      "/merch/IMG_0196.jpeg",
-      "/merch/IMG_0197.jpeg",
+      "/merch/white-tote-01.jpg",
+      "/merch/white-tote-04.jpg",
+      "/merch/white-tote-05.jpg",
+      "/merch/white-tote-03.jpg",
+      "/merch/white-tote-02.jpg",
     ],
   },
   {
