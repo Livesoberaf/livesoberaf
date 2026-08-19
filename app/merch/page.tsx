@@ -105,12 +105,18 @@ const PRODUCTS: Product[] = [
   },
   {
     id: "card-1-year",
-    name: "1 YEAR LIVESOBERAF CARD",
+    name: "1 YEAR SOBER CARD",
     type: "cards",
     colour: "WHITE",
-    description: "Milestone card celebrating one year LIVESOBERAF.",
+    description: "Five designs. Pick the one that fits. Celebrating one year sober — in the only way that deserves.",
     price: "£TBC",
-    images: [],
+    images: [
+      "/merch/one-year-card01.PNG",
+      "/merch/one-year-card02.PNG",
+      "/merch/one-year-card05.PNG",
+      "/merch/one-year-card03.PNG",
+      "/merch/one-year-card04.PNG",
+    ],
   },
 ];
 
