@@ -83,12 +83,17 @@ const PRODUCTS: Product[] = [
   },
   {
     id: "black-bottle",
-    name: "LIVESOBERAF WATER BOTTLE 02",
+    name: "LIVESOBERAF WATER BOTTLE — BLACK",
     type: "bottle",
     colour: "BLACK",
     description: "Minimal black bottle for everyday carry.",
     price: "£25.00",
-    images: [],
+    images: [
+      "/merch/black-water-04.PNG",
+      "/merch/black-water-03.PNG",
+      "/merch/black-water-01.PNG",
+      "/merch/black-water-02.PNG",
+    ],
   },
   {
     id: "tote-bag",
